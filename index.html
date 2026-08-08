@@ -137,6 +137,11 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
         display:inline-flex;align-items:center;justify-content:center}
 .dh-btn:hover{background:rgba(255,255,255,.14)}
 .abtn svg,.dh-btn svg{vertical-align:-2px}
+/* while a lesson is playing the button glows green and pulses; pressing it
+   again stops and returns it to normal */
+.abtn.playing,.dh-btn.playing{background:linear-gradient(90deg,#0d9488,#10b981)!important;
+   border-color:transparent!important;color:#fff;animation:playpulse 1.5s ease-in-out infinite}
+@keyframes playpulse{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.55)}50%{box-shadow:0 0 0 8px rgba(52,211,153,0)}}
 /* full-screen lesson mode: native Fullscreen API where available, and the same
    fixed overlay everywhere else (iPhone Safari has no element fullscreen) */
 .deck.fs{position:fixed;inset:0;margin:0;z-index:1000;border-radius:0;border:0;display:flex;flex-direction:column;
@@ -202,7 +207,7 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.9</span>
+  <span class="ver-badge" id="verBadge">v1.10</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
 </header>
@@ -477,14 +482,25 @@ function renderPortraits(t){
       if (h > 1.2){
         ctx.save();
         ctx.filter = 'blur(1px)';
-        // interior dominates; teeth are only a thin hint at the top,
-        // or the whole opening reads white at small display sizes
-        ctx.fillStyle = 'rgba(46,17,19,0.95)';
+        // natural mouth interior: warm cavity fading into a pink tongue
+        // at the bottom (a flat dark fill read as a black hole)
+        const grad = ctx.createLinearGradient(0, yT, 0, yT + h);
+        grad.addColorStop(0,    'rgba(88,33,35,0.95)');
+        grad.addColorStop(0.45, 'rgba(62,24,26,0.95)');
+        grad.addColorStop(0.72, 'rgba(152,74,80,0.95)');
+        grad.addColorStop(1,    'rgba(192,100,106,0.95)');
+        ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.ellipse(cx2, yT + h/2, rx, h/2, 0, 0, Math.PI*2);
         ctx.fill();
+        if (h > 5){                                   // tongue highlight
+          ctx.fillStyle = 'rgba(208,112,118,0.45)';
+          ctx.beginPath();
+          ctx.ellipse(cx2, yT + h*0.80, rx*0.5, h*0.18, 0, 0, Math.PI*2);
+          ctx.fill();
+        }
         if (h > 6 && mTeeth > 0.4){
-          ctx.fillStyle = 'rgba(215,205,195,' + (0.55*mTeeth) + ')';
+          ctx.fillStyle = 'rgba(222,212,202,' + (0.55*mTeeth) + ')';
           ctx.beginPath();
           ctx.ellipse(cx2, yT + h*0.18, rx*0.75, Math.min(h*0.16, 3.5), 0, 0, Math.PI*2);
           ctx.fill();
@@ -616,12 +632,15 @@ const ICON_X    = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" s
 function markPlaying(btn, stopLabel){
   if (!btn) return;
   if (!btn.dataset.label) btn.dataset.label = btn.innerHTML;
+  if (!btn.dataset.title) btn.dataset.title = btn.title || '';
   btn.innerHTML = stopLabel;
+  btn.title = 'Playing — press to stop';
   btn.classList.add('playing');
 }
 function resetButtons(){
   document.querySelectorAll('.playing').forEach(b => {
     if (b.dataset.label) b.innerHTML = b.dataset.label;
+    if (b.dataset.title !== undefined) b.title = b.dataset.title;
     b.classList.remove('playing');
   });
 }
@@ -1034,7 +1053,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.9';
+      ' · IBI Skilled Foundations Teacher v1.10';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
