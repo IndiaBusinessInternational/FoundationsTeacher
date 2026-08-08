@@ -3,3 +3,6 @@
 # data\ is the built index + logs.
 Backend/
 CNAME.pending
+# The teacher's real photo stays on the laptop, behind the sign-in gate -
+# it must NEVER be pushed to this public repo.
+teacher-photo.*

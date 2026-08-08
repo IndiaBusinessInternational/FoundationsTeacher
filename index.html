@@ -53,9 +53,16 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
 @media(max-width:860px){
   .teacher-card{position:static;display:flex;align-items:center;gap:14px;text-align:left;padding:12px 14px}
   .teacher-card svg{width:96px;height:96px}
+  .teacher-card #teacherPhoto{width:96px;height:96px}
   .teacher-card .tname{margin-top:0}
 }
 .teacher-card svg{width:210px;height:210px;max-width:100%}
+#teacherPhoto{display:none;width:210px;height:210px;max-width:100%;border-radius:50%;object-fit:cover;object-position:top;
+              border:3px solid var(--gold);box-shadow:0 0 0 6px rgba(232,182,76,.15),0 8px 28px rgba(0,0,0,.35)}
+#teacherPhoto.ok{display:inline-block}
+.speaking #teacherPhoto{animation:photoNod 2.6s ease-in-out infinite;
+              box-shadow:0 0 0 7px rgba(52,211,153,.25),0 0 26px rgba(52,211,153,.35)}
+@keyframes photoNod{0%,100%{transform:rotate(0)}30%{transform:rotate(1.3deg) translateY(-1px)}70%{transform:rotate(-1deg)}}
 .tname{font-size:16px;font-weight:700;margin-top:10px;color:var(--gold)}
 .trole{font-size:12px;color:var(--text-2);margin-top:3px;line-height:1.5}
 .tstatus{font-size:11.5px;margin-top:10px;color:var(--text-3);min-height:16px}
@@ -100,6 +107,26 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
       border-radius:14px;overflow:hidden}
 .deck-head{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:11.5px;font-weight:700;color:var(--gold);
            letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.07)}
+.dh-spacer{flex:1}
+.dh-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:var(--text);width:30px;height:30px;
+        border-radius:8px;cursor:pointer;font-size:15px;line-height:1;flex:0 0 auto}
+.dh-btn:hover{background:rgba(255,255,255,.14)}
+/* full-screen lesson mode: native Fullscreen API where available, and the same
+   fixed overlay everywhere else (iPhone Safari has no element fullscreen) */
+.deck.fs{position:fixed;inset:0;margin:0;z-index:1000;border-radius:0;border:0;display:flex;flex-direction:column;
+         background:linear-gradient(160deg,#151030,#241a4f 60%,#1c1440)}
+.deck.fs .deck-head{font-size:14px;padding:14px 20px}
+.deck.fs .slide{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
+                text-align:center;padding:4vh 7vw;min-height:0;overflow-y:auto}
+.deck.fs .slide .emoji{font-size:clamp(52px,11vw,120px)}
+.deck.fs .slide h3{font-size:clamp(28px,6vw,58px);margin:2vh 0 3vh}
+.deck.fs .slide ul{list-style:none;padding:0;margin:0;max-width:900px}
+.deck.fs .slide li{font-size:clamp(18px,3.4vw,32px);line-height:1.5;margin:2vh 0;color:var(--text)}
+.deck.fs .deck-nav{padding:14px 20px calc(14px + env(safe-area-inset-bottom))}
+.deck.fs .deck-nav button{width:52px;height:52px;font-size:22px;border-radius:12px}
+.deck.fs .deck-dots i{width:10px;height:10px}
+body.fs-lock{overflow:hidden}
+.deck:fullscreen{width:100%;height:100%}
 .slide{padding:20px 22px 16px;min-height:150px}
 .slide .emoji{font-size:34px;line-height:1;animation:pop .4s ease}
 .slide h3{margin:8px 0 10px;font-size:17px;color:#fff}
@@ -149,7 +176,7 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.0</span>
+  <span class="ver-badge" id="verBadge">v1.1</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
 </header>
@@ -158,8 +185,11 @@ button#send:disabled{opacity:.4;cursor:default}
   <div class="teacher-col">
     <div class="teacher-card" id="teacherCard">
       <div class="avatar-wrap">
-      <!-- Meera Miss — stylised Kerala teacher avatar -->
-      <svg viewBox="0 0 220 230" xmlns="http://www.w3.org/2000/svg" aria-label="Meera Miss, your teacher">
+      <!-- S. Sastika — real photo (teacher-photo.png, kept on the laptop only,
+           never in the public repo); the drawn avatar below is the fallback -->
+      <img id="teacherPhoto" alt="S. Sastika, your teacher" src="teacher-photo.png"
+           onload="this.classList.add('ok');document.getElementById('svgAvatar').style.display='none'">
+      <svg id="svgAvatar" viewBox="0 0 220 230" xmlns="http://www.w3.org/2000/svg" aria-label="Your teacher">
         <defs>
           <linearGradient id="sareeG" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="#f7f0dc"/><stop offset="1" stop-color="#efe3c3"/>
@@ -233,8 +263,8 @@ button#send:disabled{opacity:.4;cursor:default}
       </svg>
       </div>
       <div>
-        <div class="tname">Meera&nbsp;Miss</div>
-        <div class="trole">Your friendly foundations teacher<br>from Kerala 🌸</div>
+        <div class="tname">S.&nbsp;Sastika</div>
+        <div class="trole">Your friendly foundations teacher<br>Kanyakumari District, Tamil Nadu 🌸</div>
         <div class="tstatus" id="tstatus">Ask me anything from your textbooks!</div>
       </div>
     </div>
@@ -243,7 +273,7 @@ button#send:disabled{opacity:.4;cursor:default}
   <div class="chat-col">
     <div id="feed">
       <div class="welcome">
-        <h2>Namaskaram! I'm Meera Miss 🙏</h2>
+        <h2>Vanakkam! I'm S. Sastika 🙏</h2>
         <p>I have studied all the <b>NCERT textbooks from Class 1 to Class 12</b> — English, Mathematics, Science (Physics, Chemistry, Biology), Social Studies (History, Geography, Economics, Political Science), Commerce, Accountancy and more.</p>
         <p>Ask me any question. I will explain it in very simple words, show you <b>lesson slides</b>, and I can even <b>speak the lesson aloud</b> 🔊. Choose your class below so I pick the right book.</p>
       </div>
@@ -402,7 +432,10 @@ function renderDeck(container, slides){
   if (!slides.length) return;
   const deck = document.createElement('div');
   deck.className = 'deck';
-  deck.innerHTML = '<div class="deck-head">📽️ LESSON SLIDES</div><div class="slide"></div>' +
+  deck.innerHTML = '<div class="deck-head">📽️ LESSON SLIDES<span class="dh-spacer"></span>' +
+    '<button class="dh-btn fsbtn" title="Full screen (covers the whole screen)">⛶</button>' +
+    '<button class="dh-btn closebtn" title="Exit full screen" style="display:none">✕</button></div>' +
+    '<div class="slide"></div>' +
     '<div class="deck-nav"><button class="prev">‹</button><div class="deck-dots"></div><button class="next">›</button></div>';
   const slideEl = deck.querySelector('.slide');
   const dots = deck.querySelector('.deck-dots');
@@ -419,6 +452,43 @@ function renderDeck(container, slides){
   }
   deck.querySelector('.prev').onclick = ()=>show(cur-1);
   deck.querySelector('.next').onclick = ()=>show(cur+1);
+
+  /* full screen: native API on laptop/Android, fixed overlay everywhere
+     (iPhone Safari cannot fullscreen a div) — both give a whole-screen deck */
+  const fsbtn = deck.querySelector('.fsbtn'), closebtn = deck.querySelector('.closebtn');
+  function setFs(on){
+    deck.classList.toggle('fs', on);
+    document.body.classList.toggle('fs-lock', on);
+    closebtn.style.display = on ? '' : 'none';
+    if (on){
+      if (deck.requestFullscreen) deck.requestFullscreen().catch(()=>{});
+      show(cur);                       // replay point animations big
+    } else if (document.fullscreenElement === deck){
+      document.exitFullscreen().catch(()=>{});
+    }
+  }
+  fsbtn.onclick = ()=>setFs(!deck.classList.contains('fs'));
+  closebtn.onclick = ()=>setFs(false);
+  document.addEventListener('fullscreenchange', ()=>{
+    if (!document.fullscreenElement && deck.classList.contains('fs') &&
+        !deck.dataset.overlayOnly) setFs(false);
+  });
+  // mark decks whose fullscreen is overlay-only so fullscreenchange leaves them alone
+  if (!document.documentElement.requestFullscreen) deck.dataset.overlayOnly = '1';
+  document.addEventListener('keydown', e => {
+    if (!deck.classList.contains('fs')) return;
+    if (e.key === 'ArrowRight') show(cur+1);
+    else if (e.key === 'ArrowLeft') show(cur-1);
+    else if (e.key === 'Escape') setFs(false);
+  });
+  let tx = null;
+  slideEl.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, {passive:true});
+  slideEl.addEventListener('touchend', e => {
+    if (tx === null) return;
+    const dx = e.changedTouches[0].clientX - tx; tx = null;
+    if (Math.abs(dx) > 45) show(cur + (dx < 0 ? 1 : -1));
+  }, {passive:true});
+
   show(0);
   container.appendChild(deck);
 }
@@ -462,7 +532,7 @@ function ask(){
 
   const bot = document.createElement('div');
   bot.className = 'msg bot';
-  bot.innerHTML = '<div class="who">MEERA MISS</div><div class="srcbox"></div>' +
+  bot.innerHTML = '<div class="who">S. SASTIKA</div><div class="srcbox"></div>' +
     '<div class="body"><span class="typing"><i></i><i></i><i></i></span></div><div class="extra"></div>';
   feed.appendChild(bot);
   scrollDown();
@@ -566,7 +636,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.0';
+      ' · IBI Skilled Foundations Teacher v1.1';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
