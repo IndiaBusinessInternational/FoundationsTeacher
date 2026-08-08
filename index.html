@@ -60,13 +60,25 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
 .teacher-card svg{width:210px;height:210px;max-width:100%}
 /* aspect-ratio + height:auto keep the photo a perfect circle even when a
    narrow flex layout clamps its width (it rendered oval on phones otherwise) */
-#teacherPhoto{display:none;width:210px;max-width:100%;aspect-ratio:1/1;height:auto;border-radius:50%;
+#teacherPhoto,.photo-canvas{display:none;width:210px;max-width:100%;aspect-ratio:1/1;height:auto;border-radius:50%;
               object-fit:cover;object-position:top;
               border:3px solid var(--gold);box-shadow:0 0 0 6px rgba(232,182,76,.15),0 8px 28px rgba(0,0,0,.35)}
-#teacherPhoto.ok{display:inline-block}
-.speaking #teacherPhoto{animation:photoNod 2.6s ease-in-out infinite;
+#teacherPhoto.ok,.photo-canvas.ok{display:inline-block}
+.speaking #teacherPhoto,.speaking .photo-canvas{
               box-shadow:0 0 0 7px rgba(52,211,153,.25),0 0 26px rgba(52,211,153,.35)}
-@keyframes photoNod{0%,100%{transform:rotate(0)}30%{transform:rotate(1.3deg) translateY(-1px)}70%{transform:rotate(-1deg)}}
+/* animated-video mode inside full-screen lessons: Sastika in a corner bubble
+   speaking in sync, with live subtitles above the controls */
+.fs-teacher,.fs-subtitle{display:none}
+.deck.fs .fs-teacher{display:block;position:absolute;right:16px;bottom:calc(86px + env(safe-area-inset-bottom));
+              width:min(26vmin,190px);aspect-ratio:1/1;border-radius:50%;z-index:6;
+              border:2px solid var(--gold);box-shadow:0 0 0 6px rgba(232,182,76,.12),0 10px 30px rgba(0,0,0,.5);
+              background:#1a1339}
+.deck.fs .fs-subtitle{display:block;position:absolute;left:50%;transform:translateX(-50%);
+              bottom:calc(88px + env(safe-area-inset-bottom));max-width:72%;z-index:5;
+              background:rgba(0,0,0,.55);border-radius:10px;padding:8px 14px;font-size:clamp(13px,2.2vw,19px);
+              line-height:1.5;color:#fff;text-align:center;max-height:5em;overflow:hidden}
+.deck.fs .fs-subtitle:empty{display:none}
+@media(max-width:700px){ .deck.fs .fs-teacher{bottom:auto;top:56px;right:12px;width:22vmin} }
 .tname{font-size:16px;font-weight:700;margin-top:10px;color:var(--gold)}
 .trole{font-size:12px;color:var(--text-2);margin-top:3px;line-height:1.5}
 .tstatus{font-size:11.5px;margin-top:10px;color:var(--text-3);min-height:16px}
@@ -184,7 +196,7 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.6</span>
+  <span class="ver-badge" id="verBadge">v1.7</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
 </header>
@@ -346,6 +358,98 @@ function stopTalking(){
   setMouth('m-smile');
 }
 
+/* ==================== animated talking portrait ==================== */
+/* Sastika's photo speaks: the mouth/jaw region is warped every frame in
+   proportion to the REAL loudness of the voice audio (Web Audio analyser),
+   with a gentle head sway — an animated video, generated live. */
+/* geometry measured on teacher-photo.png (verified frame-by-frame offline):
+   upper lip 39%, mouth line 40.4%, lower lip 42.5%, chin 47% of image height */
+const MOUTH = { x1:0.42, x2:0.60, lipY:0.390, botY:0.530, cx:0.505, cy:0.405 };
+let actx = null, analyser = null, levelData = null, audioLevel = 0;
+function ensureAnalyser(){
+  if (actx) { if (actx.state === 'suspended') actx.resume().catch(()=>{}); return; }
+  try {
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = actx.createMediaElementSource(ttsAudio);
+    analyser = actx.createAnalyser();
+    analyser.fftSize = 512;
+    levelData = new Uint8Array(analyser.fftSize);
+    src.connect(analyser); analyser.connect(actx.destination);
+  } catch (e) { actx = 'failed'; analyser = null; }
+}
+const portraits = [];
+function makePortrait(canvas){
+  canvas.width = 420; canvas.height = 420;
+  portraits.push(canvas);
+  return canvas;
+}
+function portraitFrame(t){
+  requestAnimationFrame(portraitFrame);
+  // measure the voice
+  let target = 0;
+  if (speakingNow){
+    if (analyser && !ttsAudio.paused && ttsAudio.src){
+      analyser.getByteTimeDomainData(levelData);
+      let sum = 0;
+      for (let i = 0; i < levelData.length; i += 4){ const d = (levelData[i]-128)/128; sum += d*d; }
+      const rms = Math.sqrt(sum / (levelData.length/4));
+      target = Math.min(1, Math.max(0, (rms - 0.015) * 9));
+    } else {
+      target = 0.25 + 0.55 * Math.abs(Math.sin(t/95)) * (0.4 + 0.6*Math.random());
+    }
+  }
+  audioLevel += (target - audioLevel) * (target > audioLevel ? 0.5 : 0.25);
+  const img = document.getElementById('teacherPhoto');
+  if (!img || !img.naturalWidth) return;
+  for (const c of portraits){
+    if (!c.isConnected || c.offsetParent === null) continue;
+    const ctx = c.getContext('2d');
+    const S = c.width, iw = img.naturalWidth, ih = img.naturalHeight;
+    const s = S / iw;                       // cover, top-anchored (portrait photo)
+    ctx.save();
+    ctx.clearRect(0, 0, S, S);
+    const sway = Math.sin(t/1300) * 0.012 + (speakingNow ? Math.sin(t/460) * 0.014 * (0.3+audioLevel) : 0);
+    ctx.translate(S/2, S*0.62); ctx.rotate(sway); ctx.translate(-S/2, -S*0.62);
+    ctx.drawImage(img, 0, 0, iw, ih, 0, 0, iw*s, ih*s);
+    if (audioLevel > 0.02){
+      const a = audioLevel;
+      const sx = iw*MOUTH.x1, sw = iw*(MOUTH.x2-MOUTH.x1);
+      const sy = ih*MOUTH.lipY, sh = ih*(MOUTH.botY-MOUTH.lipY);
+      // stretch the mouth-to-chin strip downward = jaw opens
+      ctx.drawImage(img, sx, sy, sw, sh, sx*s, sy*s, sw*s, sh*s*(1 + 0.143*a));
+      // hint of an open mouth between the lips
+      ctx.fillStyle = 'rgba(70,25,28,' + (0.30*a) + ')';
+      ctx.beginPath();
+      ctx.ellipse(iw*MOUTH.cx*s, ih*(MOUTH.cy + 0.010*a)*s, iw*0.045*s, ih*0.013*s*a + 0.5, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+requestAnimationFrame(portraitFrame);
+function initPortraits(){
+  const img = document.getElementById('teacherPhoto');
+  if (!img.naturalWidth || img.dataset.animated) return;
+  img.dataset.animated = '1';
+  const card = makePortrait(document.createElement('canvas'));
+  card.className = 'photo-canvas ok';
+  // hard-hide the img: its inline onload may fire after this and re-add .ok
+  img.classList.remove('ok');
+  img.style.display = 'none';
+  document.getElementById('svgAvatar').style.display = 'none';
+  img.parentNode.insertBefore(card, img);
+}
+{
+  const img = document.getElementById('teacherPhoto');
+  if (img.complete && img.naturalWidth) initPortraits();
+  img.addEventListener('load', initPortraits);
+}
+function setCaption(text){
+  document.querySelectorAll('.fs-subtitle').forEach(el => {
+    el.textContent = text ? (text.length > 230 ? text.slice(0, 227) + '…' : text) : '';
+  });
+}
+
 /* ============================ speech (TTS) ============================ */
 /* Voice preference: female Tamil (Pallavi etc.) -> any Tamil -> female Indian
    English (Neerja/Heera) -> Indian English -> Hindi (Indian accent) -> female
@@ -453,6 +557,7 @@ function resetButtons(){
    callback so a cancelled run cannot restart playback. */
 const ttsAudio = new Audio();
 function speakItems(items, opts){
+  ensureAnalyser();      // inside the user's click, so audio may start
   const sv = serverVoiceId();
   if (sv) return speakServerItems(items, opts || {}, sv);
   return speakBrowserItems(items, opts || {});
@@ -482,6 +587,7 @@ async function speakServerItems(items, opts, voiceId){
     pending = i + 1 < list.length ? fetchOne(list[i + 1]) : null;
     if (token !== speakToken || !speakingNow) return true;
     if (list[i].onStart){ try { list[i].onStart(); } catch (e) {} }
+    setCaption(list[i].text);
     if (blob){
       const url = URL.createObjectURL(blob);
       await new Promise(res => {
@@ -515,6 +621,7 @@ function speakBrowserItems(items, opts){
     if (i >= steps.length){ endSpeak(); if (opts.onEnd) opts.onEnd(); return; }
     const step = steps[i++];
     if (step.onStart){ try { step.onStart(); } catch(e){} }
+    setCaption(step.text);
     if (!step.text){ next(); return; }
     const u = new SpeechSynthesisUtterance(step.text);
     if (voice){ u.voice = voice; u.lang = voice.lang; }
@@ -527,13 +634,13 @@ function speakBrowserItems(items, opts){
   return true;
 }
 function endSpeak(){
-  speakingNow = false; stopTalking(); resetButtons();
+  speakingNow = false; stopTalking(); resetButtons(); setCaption('');
 }
 function stopSpeak(){
   speakingNow = false; speakToken++;
   try{ speechSynthesis.cancel(); }catch(e){}
   try{ ttsAudio.pause(); ttsAudio.removeAttribute('src'); }catch(e){}
-  stopTalking(); resetButtons();
+  stopTalking(); resetButtons(); setCaption('');
 }
 
 /* ============================ markdown (tiny, safe) ============================ */
@@ -582,7 +689,12 @@ function renderDeck(container, slides){
     '<button class="dh-btn fsbtn" title="Full screen (covers the whole screen)">⛶</button>' +
     '<button class="dh-btn closebtn" title="Exit full screen" style="display:none">✕</button></div>' +
     '<div class="slide"></div>' +
+    '<div class="fs-subtitle"></div>' +
     '<div class="deck-nav"><button class="prev">‹</button><div class="deck-dots"></div><button class="next">›</button></div>';
+  // Sastika appears in a corner bubble during full-screen lessons, speaking live
+  const pip = makePortrait(document.createElement('canvas'));
+  pip.className = 'fs-teacher';
+  deck.appendChild(pip);
   const slideEl = deck.querySelector('.slide');
   const dots = deck.querySelector('.deck-dots');
   const counter = deck.querySelector('.dh-count');
@@ -824,7 +936,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.6';
+      ' · IBI Skilled Foundations Teacher v1.7';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
