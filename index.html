@@ -176,7 +176,7 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.1</span>
+  <span class="ver-badge" id="verBadge">v1.2</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
 </header>
@@ -293,9 +293,9 @@ button#send:disabled{opacity:.4;cursor:default}
       </div>
       <div class="hintrow" id="hints">
         <span class="hint">Why is the sky blue?</span>
-        <span class="hint">What is photosynthesis?</span>
+        <span class="hint">Explain Class 6 Science chapter wise</span>
+        <span class="hint">Explain Class 8 Science Chapter 5 in detail</span>
         <span class="hint">Explain fractions with an example</span>
-        <span class="hint">What is democracy?</span>
         <span class="hint">What is a balance sheet?</span>
       </div>
       <div class="statusline" id="statusline">…</div>
@@ -636,7 +636,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.1';
+      ' · IBI Skilled Foundations Teacher v1.2';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
