@@ -196,7 +196,7 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.7</span>
+  <span class="ver-badge" id="verBadge">v1.8</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
 </header>
@@ -364,7 +364,7 @@ function stopTalking(){
    with a gentle head sway — an animated video, generated live. */
 /* geometry measured on teacher-photo.png (verified frame-by-frame offline):
    upper lip 39%, mouth line 40.4%, lower lip 42.5%, chin 47% of image height */
-const MOUTH = { x1:0.42, x2:0.60, lipY:0.390, botY:0.530, cx:0.505, cy:0.405 };
+const MOUTH = { x1:0.42, x2:0.60, lipY:0.390, botY:0.530, cx:0.505, openY:0.3975 };
 let actx = null, analyser = null, levelData = null, audioLevel = 0;
 function ensureAnalyser(){
   if (actx) { if (actx.state === 'suspended') actx.resume().catch(()=>{}); return; }
@@ -383,8 +383,19 @@ function makePortrait(canvas){
   portraits.push(canvas);
   return canvas;
 }
+let lastFrameAt = 0;
 function portraitFrame(t){
   requestAnimationFrame(portraitFrame);
+  renderPortraits(t);
+}
+// Watchdog: Chrome can throttle or stop requestAnimationFrame entirely
+// (energy saver, occluded window, some GPU states) — if no frame has run
+// recently, drive the animation from this timer so the mouth always moves.
+setInterval(() => {
+  if (performance.now() - lastFrameAt > 90) renderPortraits(performance.now());
+}, 33);
+function renderPortraits(t){
+  lastFrameAt = performance.now();
   // measure the voice
   let target = 0;
   if (speakingNow){
@@ -412,16 +423,32 @@ function portraitFrame(t){
     ctx.translate(S/2, S*0.62); ctx.rotate(sway); ctx.translate(-S/2, -S*0.62);
     ctx.drawImage(img, 0, 0, iw, ih, 0, 0, iw*s, ih*s);
     if (audioLevel > 0.02){
-      const a = audioLevel;
+      // response curve: mid loudness already opens the mouth clearly —
+      // the raw level made it look like a faint vibration
+      const a = Math.min(1, Math.pow(audioLevel, 0.7) * 1.25);
       const sx = iw*MOUTH.x1, sw = iw*(MOUTH.x2-MOUTH.x1);
       const sy = ih*MOUTH.lipY, sh = ih*(MOUTH.botY-MOUTH.lipY);
-      // stretch the mouth-to-chin strip downward = jaw opens
-      ctx.drawImage(img, sx, sy, sw, sh, sx*s, sy*s, sw*s, sh*s*(1 + 0.143*a));
-      // hint of an open mouth between the lips
-      ctx.fillStyle = 'rgba(70,25,28,' + (0.30*a) + ')';
-      ctx.beginPath();
-      ctx.ellipse(iw*MOUTH.cx*s, ih*(MOUTH.cy + 0.010*a)*s, iw*0.045*s, ih*0.013*s*a + 0.5, 0, 0, Math.PI*2);
-      ctx.fill();
+      // jaw drops: mouth-to-chin strip stretched downward
+      ctx.drawImage(img, sx, sy, sw, sh, sx*s, sy*s, sw*s, sh*s*(1 + 0.15*a));
+      // the opening: dark mouth interior with a hint of teeth, anchored
+      // on the lip line (frame-verified offline before shipping)
+      const h = ih*0.030*a*s, yT = ih*MOUTH.openY*s;
+      const cx2 = iw*MOUTH.cx*s, rx = iw*0.047*(1 - 0.15*a)*s;
+      if (h > 1.2){
+        ctx.save();
+        ctx.filter = 'blur(1px)';
+        ctx.fillStyle = 'rgba(52,20,22,0.92)';
+        ctx.beginPath();
+        ctx.ellipse(cx2, yT + h/2, rx, h/2, 0, 0, Math.PI*2);
+        ctx.fill();
+        if (h > 4){
+          ctx.fillStyle = 'rgba(228,218,208,0.85)';
+          ctx.beginPath();
+          ctx.ellipse(cx2, yT + h*0.22, rx*0.82, h*0.21, 0, 0, Math.PI*2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
     }
     ctx.restore();
   }
@@ -936,7 +963,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.7';
+      ' · IBI Skilled Foundations Teacher v1.8';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
