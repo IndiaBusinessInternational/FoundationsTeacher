@@ -67,6 +67,8 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
 .trole{font-size:12px;color:var(--text-2);margin-top:3px;line-height:1.5}
 .tstatus{font-size:11.5px;margin-top:10px;color:var(--text-3);min-height:16px}
 .tstatus.speaking{color:var(--green)}
+#voiceSel{margin-top:9px;max-width:100%;font-size:11px;color:var(--text-2);background:rgba(0,0,0,.25);
+          border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:5px 7px}
 .avatar-wrap{display:inline-block;animation:breathe 4.2s ease-in-out infinite;transform-origin:50% 90%}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.012)}}
 .head-group{transform-origin:110px 118px;transition:transform .6s ease}
@@ -177,7 +179,7 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.3</span>
+  <span class="ver-badge" id="verBadge">v1.4</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
 </header>
@@ -267,6 +269,7 @@ button#send:disabled{opacity:.4;cursor:default}
         <div class="tname">S.&nbsp;Sastika</div>
         <div class="trole">Your friendly foundations teacher<br>Kanyakumari District, Tamil Nadu 🌸</div>
         <div class="tstatus" id="tstatus">Ask me anything from your textbooks!</div>
+        <select id="voiceSel" title="Teacher's voice on this device" style="display:none"></select>
       </div>
     </div>
   </div>
@@ -339,16 +342,47 @@ function stopTalking(){
 }
 
 /* ============================ speech (TTS) ============================ */
+/* Voice preference: female Tamil (Pallavi etc.) -> any Tamil -> female Indian
+   English (Neerja/Heera) -> Indian English -> Hindi (Indian accent) -> female
+   English. Voices differ per device, so the dropdown on the teacher card lets
+   the user pick, remembered per device. */
 let voice = null;
+const VOICE_LS = 'sft_voice';
+function rankVoice(v){
+  const n = v.name.toLowerCase();
+  const l = v.lang.toLowerCase().replace('_','-');
+  if (/valluvar/.test(n)) return 45;                       // Tamil, but male
+  if (l.startsWith('ta')) return /pallavi|female/.test(n) ? 100 : 90;
+  if (l === 'en-in') return /neerja|heera|swara|ananya|aashi|female|natural/.test(n) ? 80 : 70;
+  if (l.startsWith('hi')) return /male/.test(n) && !/female/.test(n) ? 48 : 55;
+  if (l.startsWith('en')) return /female|zira|sonia|libby|susan|aria|jenny/.test(n) ? 40 : 25;
+  return 5;
+}
+function fillVoiceSel(vs){
+  const sel = document.getElementById('voiceSel');
+  if (!sel) return;
+  const listed = [...vs].sort((a,b)=>rankVoice(b)-rankVoice(a)).slice(0,15);
+  sel.innerHTML = listed.map(v =>
+    '<option value="'+esc(v.name)+'"'+(voice && v.name===voice.name?' selected':'')+'>'+
+    esc(v.name.replace(/^(Microsoft|Google) /,'').replace(/ - .*$/,''))+' ('+esc(v.lang)+')</option>').join('');
+  sel.style.display = listed.length > 1 ? '' : 'none';
+}
 function pickVoice(){
   const vs = speechSynthesis.getVoices();
   if (!vs.length) return;
-  voice = vs.find(v => /en-IN/i.test(v.lang) && /neerja|heera|female|natural/i.test(v.name))
-       || vs.find(v => /en-IN/i.test(v.lang))
-       || vs.find(v => /en-GB/i.test(v.lang) && /female|sonia|libby/i.test(v.name))
-       || vs.find(v => v.lang.startsWith('en')) || vs[0];
+  const saved = localStorage.getItem(VOICE_LS);
+  const savedVoice = saved && vs.find(v => v.name === saved);
+  voice = savedVoice || [...vs].sort((a,b)=>rankVoice(b)-rankVoice(a))[0];
+  fillVoiceSel(vs);
 }
 if ('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+document.getElementById('voiceSel').addEventListener('change', e => {
+  const v = speechSynthesis.getVoices().find(x => x.name === e.target.value);
+  if (!v) return;
+  voice = v;
+  localStorage.setItem(VOICE_LS, v.name);
+  speakItems([{ text: 'Vanakkam! I am Sastika Miss, your teacher.' }], {});
+});
 
 let speakingNow = false, speakToken = 0;
 
@@ -414,7 +448,7 @@ function speakItems(items, opts){
     if (step.onStart){ try { step.onStart(); } catch(e){} }
     if (!step.text){ next(); return; }
     const u = new SpeechSynthesisUtterance(step.text);
-    if (voice) u.voice = voice;
+    if (voice){ u.voice = voice; u.lang = voice.lang; }
     u.rate = opts.rate || 0.97; u.pitch = 1.06;
     u.onend = next;
     u.onerror = () => { if (token === speakToken){ endSpeak(); if (opts.onEnd) opts.onEnd(); } };
@@ -715,7 +749,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.3';
+      ' · IBI Skilled Foundations Teacher v1.4';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
