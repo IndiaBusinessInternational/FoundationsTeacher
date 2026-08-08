@@ -120,6 +120,10 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
 .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
 @keyframes blinkdot{0%,80%,100%{opacity:.25}40%{opacity:1}}
 .errline{color:var(--red);font-size:13px}
+.slidenote{margin-top:12px;padding:10px 14px;border-radius:12px;font-size:12.5px;color:var(--gold);
+           background:rgba(232,182,76,.08);border:1px dashed rgba(232,182,76,.4);animation:pop .25s ease}
+.slidenote b{color:#fff}
+.slidenote .typing i{background:var(--gold)}
 
 /* ---------------- slides ---------------- */
 .deck{margin-top:12px;background:linear-gradient(160deg,#1a1339,#241a4f);border:1px solid rgba(232,182,76,.25);
@@ -129,8 +133,10 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
 .dh-spacer{flex:1}
 .dh-count{font-size:10.5px;color:var(--text-3);font-weight:600;margin-left:4px}
 .dh-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:var(--text);width:30px;height:30px;
-        border-radius:8px;cursor:pointer;font-size:15px;line-height:1;flex:0 0 auto}
+        border-radius:8px;cursor:pointer;font-size:15px;line-height:1;flex:0 0 auto;
+        display:inline-flex;align-items:center;justify-content:center}
 .dh-btn:hover{background:rgba(255,255,255,.14)}
+.abtn svg,.dh-btn svg{vertical-align:-2px}
 /* full-screen lesson mode: native Fullscreen API where available, and the same
    fixed overlay everywhere else (iPhone Safari has no element fullscreen) */
 .deck.fs{position:fixed;inset:0;margin:0;z-index:1000;border-radius:0;border:0;display:flex;flex-direction:column;
@@ -196,7 +202,7 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.8</span>
+  <span class="ver-badge" id="verBadge">v1.9</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
 </header>
@@ -383,6 +389,31 @@ function makePortrait(canvas){
   portraits.push(canvas);
   return canvas;
 }
+
+/* visemes: real mouths form SHAPES per sound, not just open/close.
+   We know the text being spoken and how far playback has reached, so the
+   lips round for O/U, widen for E/I, close for M/B/P and between words. */
+const VISEMES = {
+  open:   { rx:0.047, hK:0.030, teeth:1 },
+  wide:   { rx:0.058, hK:0.016, teeth:1 },
+  round:  { rx:0.030, hK:0.028, teeth:0 },
+  closed: { rx:0.044, hK:0.006, teeth:0 },
+};
+let speechText = '', speechFrac = -1;   // set by the speech players
+function visemeAt(text, frac){
+  if (!text) return 'open';
+  const i = Math.max(0, Math.min(text.length - 1, Math.floor(frac * text.length)));
+  for (let k = i; k < Math.min(text.length, i + 3); k++){
+    const ch = text[k].toLowerCase();
+    if (' ,.;:!?'.includes(ch)) return 'closed';
+    if ('mbp'.includes(ch)) return 'closed';
+    if ('ouw'.includes(ch)) return 'round';
+    if ('eiy'.includes(ch)) return 'wide';
+    if ('a'.includes(ch)) return 'open';
+  }
+  return 'open';
+}
+let mRx = VISEMES.open.rx, mH = 0, mTeeth = 1;   // smoothed mouth state
 let lastFrameAt = 0;
 function portraitFrame(t){
   requestAnimationFrame(portraitFrame);
@@ -410,6 +441,17 @@ function renderPortraits(t){
     }
   }
   audioLevel += (target - audioLevel) * (target > audioLevel ? 0.5 : 0.25);
+  // blend amplitude with the current sound's mouth SHAPE
+  let vis = 'open';
+  if (speakingNow && speechText){
+    const frac = speechFrac >= 0 ? speechFrac :
+      (ttsAudio.duration > 0 && !ttsAudio.paused ? ttsAudio.currentTime / ttsAudio.duration : -1);
+    if (frac >= 0) vis = visemeAt(speechText, frac);
+  }
+  const V = VISEMES[vis];
+  mRx += (V.rx - mRx) * 0.35;
+  mH  += (V.hK * Math.min(1, audioLevel * 1.4) - mH) * 0.45;
+  mTeeth += (V.teeth - mTeeth) * 0.4;
   const img = document.getElementById('teacherPhoto');
   if (!img || !img.naturalWidth) return;
   for (const c of portraits){
@@ -422,29 +464,29 @@ function renderPortraits(t){
     const sway = Math.sin(t/1300) * 0.012 + (speakingNow ? Math.sin(t/460) * 0.014 * (0.3+audioLevel) : 0);
     ctx.translate(S/2, S*0.62); ctx.rotate(sway); ctx.translate(-S/2, -S*0.62);
     ctx.drawImage(img, 0, 0, iw, ih, 0, 0, iw*s, ih*s);
-    if (audioLevel > 0.02){
-      // response curve: mid loudness already opens the mouth clearly —
-      // the raw level made it look like a faint vibration
-      const a = Math.min(1, Math.pow(audioLevel, 0.7) * 1.25);
+    if (mH > 0.003){
+      const openF = Math.min(1, mH / 0.030);          // how far the jaw is open
       const sx = iw*MOUTH.x1, sw = iw*(MOUTH.x2-MOUTH.x1);
       const sy = ih*MOUTH.lipY, sh = ih*(MOUTH.botY-MOUTH.lipY);
       // jaw drops: mouth-to-chin strip stretched downward
-      ctx.drawImage(img, sx, sy, sw, sh, sx*s, sy*s, sw*s, sh*s*(1 + 0.15*a));
-      // the opening: dark mouth interior with a hint of teeth, anchored
-      // on the lip line (frame-verified offline before shipping)
-      const h = ih*0.030*a*s, yT = ih*MOUTH.openY*s;
-      const cx2 = iw*MOUTH.cx*s, rx = iw*0.047*(1 - 0.15*a)*s;
+      ctx.drawImage(img, sx, sy, sw, sh, sx*s, sy*s, sw*s, sh*s*(1 + 0.15*openF));
+      // the opening: dark mouth interior with a hint of teeth, shaped by
+      // the current viseme (frame-verified offline before shipping)
+      const h = ih*mH*s, yT = ih*MOUTH.openY*s;
+      const cx2 = iw*MOUTH.cx*s, rx = iw*mRx*(1 - 0.10*openF)*s;
       if (h > 1.2){
         ctx.save();
         ctx.filter = 'blur(1px)';
-        ctx.fillStyle = 'rgba(52,20,22,0.92)';
+        // interior dominates; teeth are only a thin hint at the top,
+        // or the whole opening reads white at small display sizes
+        ctx.fillStyle = 'rgba(46,17,19,0.95)';
         ctx.beginPath();
         ctx.ellipse(cx2, yT + h/2, rx, h/2, 0, 0, Math.PI*2);
         ctx.fill();
-        if (h > 4){
-          ctx.fillStyle = 'rgba(228,218,208,0.85)';
+        if (h > 6 && mTeeth > 0.4){
+          ctx.fillStyle = 'rgba(215,205,195,' + (0.55*mTeeth) + ')';
           ctx.beginPath();
-          ctx.ellipse(cx2, yT + h*0.22, rx*0.82, h*0.21, 0, 0, Math.PI*2);
+          ctx.ellipse(cx2, yT + h*0.18, rx*0.75, Math.min(h*0.16, 3.5), 0, 0, Math.PI*2);
           ctx.fill();
         }
         ctx.restore();
@@ -564,15 +606,22 @@ function lessonSections(explain){
   return speechGroups(cleanForSpeech(explain));
 }
 
+/* icons as inline SVG — the Unicode play/stop/fullscreen glyphs render as
+   broken "tofu" boxes on many Windows fonts */
+const ICON_PLAY = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+const ICON_STOP = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>';
+const ICON_FS   = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>';
+const ICON_X    = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
 function markPlaying(btn, stopLabel){
   if (!btn) return;
-  if (!btn.dataset.label) btn.dataset.label = btn.textContent;
-  btn.textContent = stopLabel;
+  if (!btn.dataset.label) btn.dataset.label = btn.innerHTML;
+  btn.innerHTML = stopLabel;
   btn.classList.add('playing');
 }
 function resetButtons(){
   document.querySelectorAll('.playing').forEach(b => {
-    if (b.dataset.label) b.textContent = b.dataset.label;
+    if (b.dataset.label) b.innerHTML = b.dataset.label;
     b.classList.remove('playing');
   });
 }
@@ -596,7 +645,7 @@ async function speakServerItems(items, opts, voiceId){
   const list = items.map(it => ({ text: cleanForSpeech(it.text || ''), onStart: it.onStart }));
   if (!list.some(it => it.text || it.onStart)) return false;
   speakingNow = true; startTalking();
-  markPlaying(opts.btn, opts.stopLabel || '⏹ Stop');
+  markPlaying(opts.btn, opts.stopLabel || ICON_STOP + ' Stop');
   const fetchOne = it => !it.text ? Promise.resolve(null) :
     fetch('/api/tts', { method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: it.text.slice(0, 1500), voice: voiceId }) })
@@ -615,6 +664,7 @@ async function speakServerItems(items, opts, voiceId){
     if (token !== speakToken || !speakingNow) return true;
     if (list[i].onStart){ try { list[i].onStart(); } catch (e) {} }
     setCaption(list[i].text);
+    speechText = list[i].text; speechFrac = -1;
     if (blob){
       const url = URL.createObjectURL(blob);
       await new Promise(res => {
@@ -641,7 +691,7 @@ function speakBrowserItems(items, opts){
   }
   if (!steps.length) return false;
   speakingNow = true; startTalking();
-  markPlaying(opts.btn, opts.stopLabel || '⏹ Stop');
+  markPlaying(opts.btn, opts.stopLabel || ICON_STOP + ' Stop');
   let i = 0;
   const next = () => {
     if (token !== speakToken || !speakingNow) return;
@@ -653,6 +703,8 @@ function speakBrowserItems(items, opts){
     const u = new SpeechSynthesisUtterance(step.text);
     if (voice){ u.voice = voice; u.lang = voice.lang; }
     u.rate = opts.rate || 0.97; u.pitch = 1.06;
+    speechText = step.text; speechFrac = -1;
+    u.onboundary = e => { speechFrac = Math.min(1, e.charIndex / Math.max(1, step.text.length)); };
     u.onend = next;
     u.onerror = () => { if (token === speakToken){ endSpeak(); if (opts.onEnd) opts.onEnd(); } };
     speechSynthesis.speak(u);
@@ -662,12 +714,14 @@ function speakBrowserItems(items, opts){
 }
 function endSpeak(){
   speakingNow = false; stopTalking(); resetButtons(); setCaption('');
+  speechText = ''; speechFrac = -1;
 }
 function stopSpeak(){
   speakingNow = false; speakToken++;
   try{ speechSynthesis.cancel(); }catch(e){}
   try{ ttsAudio.pause(); ttsAudio.removeAttribute('src'); }catch(e){}
   stopTalking(); resetButtons(); setCaption('');
+  speechText = ''; speechFrac = -1;
 }
 
 /* ============================ markdown (tiny, safe) ============================ */
@@ -695,12 +749,14 @@ function md(src){
 function parseSlides(text){
   const out = [];
   for (const line of text.split('\n')){
-    const m = /^\s*Slide\s*\d*\s*[:.-]\s*(.+)$/i.exec(line.trim());
-    if (!m) continue;
+    // accept "Slide 1: ..." but also the bare "1: ..." the local model
+    // sometimes writes (we are already inside the [SLIDES] section)
+    const m = /^\s*(?:Slide\s*\d*|\d{1,2})\s*[:.-]\s*(.+)$/i.exec(line.trim());
+    if (!m || m[1].length < 4) continue;
     const segs = m[1].split('|').map(s=>s.trim());
-    const title = segs[0] || 'Lesson';
+    const title = (segs[0] || 'Lesson').replace(/^\*+|\*+$/g,'');
     let emoji = '📘', pts = '';
-    if (segs.length >= 3){ emoji = segs[1] || '📘'; pts = segs.slice(2).join('|'); }
+    if (segs.length >= 3){ emoji = segs[1] || '📘'; pts = segs.slice(2).join(';;'); }
     else if (segs.length === 2){ pts = segs[1]; }
     const points = pts.split(/;;|;/).map(s=>s.trim()).filter(Boolean).slice(0,5);
     if (title) out.push({ title, emoji, points });
@@ -712,9 +768,9 @@ function renderDeck(container, slides){
   const deck = document.createElement('div');
   deck.className = 'deck';
   deck.innerHTML = '<div class="deck-head">📽️ LESSON SLIDES<span class="dh-count"></span><span class="dh-spacer"></span>' +
-    '<button class="dh-btn playbtn" title="Teach these slides aloud — the slides move with the lesson">▶</button>' +
-    '<button class="dh-btn fsbtn" title="Full screen (covers the whole screen)">⛶</button>' +
-    '<button class="dh-btn closebtn" title="Exit full screen" style="display:none">✕</button></div>' +
+    '<button class="dh-btn playbtn" title="Teach these slides aloud — the slides move with the lesson">' + ICON_PLAY + '</button>' +
+    '<button class="dh-btn fsbtn" title="Full screen (covers the whole screen)">' + ICON_FS + '</button>' +
+    '<button class="dh-btn closebtn" title="Exit full screen" style="display:none">' + ICON_X + '</button></div>' +
     '<div class="slide"></div>' +
     '<div class="fs-subtitle"></div>' +
     '<div class="deck-nav"><button class="prev">‹</button><div class="deck-dots"></div><button class="next">›</button></div>';
@@ -790,7 +846,7 @@ function renderDeck(container, slides){
       text: s.title + '. ' + s.points.join('. ') + '.',
       onStart: () => show(i),
     }));
-    speakItems(items, { btn: playbtn, stopLabel: '⏹', rate: 0.95,
+    speakItems(items, { btn: playbtn, stopLabel: ICON_STOP, rate: 0.95,
                         onEnd: () => setFs(false) });
   }
   function togglePresent(){
@@ -852,7 +908,7 @@ function ask(){
   const extra = bot.querySelector('.extra');
   document.getElementById('tstatus').textContent = '🤔 Thinking…';
 
-  let raw = '', gotFirst = false, lastRender = 0;
+  let raw = '', gotFirst = false, lastRender = 0, slideNote = null;
   const render = (force) => {
     const now = Date.now();
     if (!force && now - lastRender < 250) return;
@@ -864,6 +920,20 @@ function ask(){
     if (si !== -1) explain = (ei !== -1 ? raw.slice(ei + 9, si) : raw.slice(0, si));
     explain = explain.replace(/\[END\]\s*$/,'').trim();
     bodyEl.innerHTML = md(explain) || '<span class="typing"><i></i><i></i><i></i></span>';
+    // the deck streams AFTER the text: show that slides are being made
+    if (si !== -1){
+      const n = (raw.slice(si + 8).match(/^\s*(?:Slide\s*)?\d{1,2}\s*[:.-]/gim) || []).length;
+      if (!slideNote){
+        slideNote = document.createElement('div');
+        slideNote.className = 'slidenote';
+        extra.appendChild(slideNote);
+        scrollDown();
+      }
+      slideNote.innerHTML = '📽️ S. Sastika is preparing your lesson slides… ' +
+        (n ? '<b>slide ' + n + '</b> ' : '') +
+        '<span class="typing"><i></i><i></i><i></i></span>';
+      document.getElementById('tstatus').textContent = '🎨 Making slides…';
+    }
   };
 
   fetch('/api/ask', {
@@ -916,6 +986,7 @@ function ask(){
     explain = explain.replace(/\[END\]\s*$/,'').trim();
     history.push({ role:'user', content: question });
     history.push({ role:'assistant', content: explain.slice(0, 3000) });
+    if (slideNote){ slideNote.remove(); slideNote = null; }
     let deckApi = null;
     if (si !== -1){
       const slides = parseSlides(raw.slice(si + 8).replace(/\[END\][\s\S]*$/,''));
@@ -963,7 +1034,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.8';
+      ' · IBI Skilled Foundations Teacher v1.9';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
