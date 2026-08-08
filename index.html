@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IBI Skilled Foundations Teacher</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👩‍🏫</text></svg>">
+<meta name="description" content="Your friendly AI teacher — every NCERT concept from Class 1 to 12, explained simply.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="India Business International">
+<meta property="og:title" content="IBI Skilled Foundations Teacher">
+<meta property="og:description" content="Your friendly AI teacher — every NCERT concept from Class 1 to 12, explained simply.">
+<meta property="og:url" content="https://teacher.indiabusinessinternational.online/">
+<meta property="og:image" content="https://teacher.indiabusinessinternational.online/og-banner.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="IBI Skilled Foundations Teacher">
+<meta name="twitter:description" content="Your friendly AI teacher — every NCERT concept from Class 1 to 12, explained simply.">
+<meta name="twitter:image" content="https://teacher.indiabusinessinternational.online/og-banner.png">
+<style>
+:root{
+  --violet:#7F00FF; --violet-2:#a855f7; --bg:#14102a; --bg-2:#1d1640; --card:#231b4a;
+  --card-2:#2b2158; --text:#efeaff; --text-2:#c4b8e8; --text-3:#8d7cb0; --gold:#e8b64c;
+  --green:#34d399; --red:#f87171; --radius:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:
+     radial-gradient(1200px 600px at 80% -10%,rgba(127,0,255,.25),transparent),
+     linear-gradient(170deg,var(--bg),var(--bg-2));color:var(--text);min-height:100vh}
+header{display:flex;align-items:center;gap:12px;padding:12px 18px;position:sticky;top:0;z-index:40;
+       background:rgba(20,16,42,.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.07)}
+.logo{width:34px;height:34px;flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:3px;
+      background:linear-gradient(135deg,var(--violet),var(--violet-2));border-radius:9px}
+.logo i{background:#fff;border-radius:50%;opacity:.92}
+h1{font-size:16.5px;margin:0;font-weight:700;letter-spacing:.2px;line-height:1.25}
+h1 small{display:block;font-size:10.5px;font-weight:500;color:var(--text-3);letter-spacing:.4px}
+.ver-badge{font-size:10px;font-weight:700;color:#fff;background:linear-gradient(90deg,var(--violet),var(--violet-2));
+           border-radius:20px;padding:3px 9px;margin-left:2px;flex:0 0 auto}
+.spacer{flex:1}
+.engine-pill{font-size:11px;color:var(--text-2);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+             border-radius:20px;padding:5px 11px;white-space:nowrap}
+.engine-pill b{color:var(--green);font-weight:600}
+.engine-pill.off b{color:var(--red)}
+main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;margin:0 auto;padding:18px}
+@media(max-width:860px){ main{grid-template-columns:1fr;padding:12px} .teacher-col{order:-1} }
+
+/* ---------------- teacher panel ---------------- */
+.teacher-col{position:relative}
+.teacher-card{background:linear-gradient(180deg,var(--card),var(--card-2));border:1px solid rgba(255,255,255,.09);
+              border-radius:var(--radius);padding:18px;text-align:center;position:sticky;top:74px}
+@media(max-width:860px){
+  .teacher-card{position:static;display:flex;align-items:center;gap:14px;text-align:left;padding:12px 14px}
+  .teacher-card svg{width:96px;height:96px}
+  .teacher-card .tname{margin-top:0}
+}
+.teacher-card svg{width:210px;height:210px;max-width:100%}
+.tname{font-size:16px;font-weight:700;margin-top:10px;color:var(--gold)}
+.trole{font-size:12px;color:var(--text-2);margin-top:3px;line-height:1.5}
+.tstatus{font-size:11.5px;margin-top:10px;color:var(--text-3);min-height:16px}
+.tstatus.speaking{color:var(--green)}
+.avatar-wrap{display:inline-block;animation:breathe 4.2s ease-in-out infinite;transform-origin:50% 90%}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.012)}}
+.head-group{transform-origin:110px 118px;transition:transform .6s ease}
+.speaking .head-group{animation:nod 2.6s ease-in-out infinite}
+@keyframes nod{0%,100%{transform:rotate(0)}30%{transform:rotate(1.6deg)}70%{transform:rotate(-1.2deg)}}
+
+/* ---------------- chat ---------------- */
+.chat-col{display:flex;flex-direction:column;min-width:0}
+#feed{flex:1;display:flex;flex-direction:column;gap:14px;padding-bottom:14px}
+.msg{max-width:92%;border-radius:var(--radius);padding:13px 16px;font-size:14.5px;line-height:1.62;
+     animation:pop .25s ease;overflow-wrap:break-word}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:#fff;border-bottom-right-radius:5px}
+.msg.bot{align-self:flex-start;background:var(--card);border:1px solid rgba(255,255,255,.08);border-bottom-left-radius:5px;width:92%}
+.msg.bot .who{font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.3px;margin-bottom:6px}
+.msg .body :is(p,ul,ol){margin:.45em 0} .msg .body ul,.msg .body ol{padding-left:1.3em}
+.msg .body h1,.msg .body h2,.msg .body h3{font-size:1.02em;margin:.7em 0 .3em;color:var(--gold)}
+.msg .body code{background:rgba(0,0,0,.3);border-radius:5px;padding:1px 5px;font-size:.92em}
+.msg .body pre{background:rgba(0,0,0,.32);border-radius:9px;padding:10px 12px;overflow-x:auto}
+.msg .body pre code{background:none;padding:0}
+.msg .body strong{color:#fff}
+.sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:10.5px;color:var(--text-2);background:rgba(127,0,255,.16);border:1px solid rgba(168,85,247,.3);
+      border-radius:14px;padding:3px 9px}
+.actions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+.abtn{font-size:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:var(--text);
+      border-radius:9px;padding:6px 12px;cursor:pointer;transition:.15s}
+.abtn:hover{background:rgba(255,255,255,.12)}
+.abtn.primary{background:linear-gradient(90deg,var(--violet),var(--violet-2));border-color:transparent;font-weight:600}
+.typing{display:inline-flex;gap:4px;align-items:center;padding:4px 0}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--text-3);animation:blinkdot 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blinkdot{0%,80%,100%{opacity:.25}40%{opacity:1}}
+.errline{color:var(--red);font-size:13px}
+
+/* ---------------- slides ---------------- */
+.deck{margin-top:12px;background:linear-gradient(160deg,#1a1339,#241a4f);border:1px solid rgba(232,182,76,.25);
+      border-radius:14px;overflow:hidden}
+.deck-head{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:11.5px;font-weight:700;color:var(--gold);
+           letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.07)}
+.slide{padding:20px 22px 16px;min-height:150px}
+.slide .emoji{font-size:34px;line-height:1;animation:pop .4s ease}
+.slide h3{margin:8px 0 10px;font-size:17px;color:#fff}
+.slide li{font-size:13.5px;color:var(--text-2);margin:7px 0;opacity:0;animation:slidein .5s ease forwards}
+@keyframes slidein{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.deck-nav{display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid rgba(255,255,255,.07)}
+.deck-nav button{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:var(--text);
+                 width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px}
+.deck-nav button:disabled{opacity:.3;cursor:default}
+.deck-dots{flex:1;display:flex;gap:5px;justify-content:center}
+.deck-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18)}
+.deck-dots i.on{background:var(--gold)}
+
+/* ---------------- composer ---------------- */
+.composer{position:sticky;bottom:0;background:rgba(20,16,42,.92);backdrop-filter:blur(10px);
+          padding:10px 0 14px;border-top:1px solid rgba(255,255,255,.06)}
+.comp-row{display:flex;gap:9px;align-items:flex-end}
+select#classSel{background:var(--card);color:var(--text);border:1px solid rgba(255,255,255,.14);border-radius:11px;
+                padding:11px 8px;font-size:13px;flex:0 0 auto;max-width:118px}
+textarea#q{flex:1;resize:none;background:var(--card);color:var(--text);border:1px solid rgba(255,255,255,.14);
+           border-radius:11px;padding:12px 14px;font-size:14.5px;font-family:inherit;line-height:1.5;
+           min-height:46px;max-height:180px;overflow-y:auto}
+textarea#q:focus{outline:2px solid var(--violet-2);border-color:transparent}
+button#send{flex:0 0 auto;width:46px;height:46px;border:0;border-radius:12px;cursor:pointer;font-size:18px;
+            background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff}
+button#send:disabled{opacity:.4;cursor:default}
+.hintrow{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.hint{font-size:11.5px;color:var(--text-2);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+      border-radius:16px;padding:5px 11px;cursor:pointer;transition:.15s}
+.hint:hover{background:rgba(127,0,255,.25)}
+.statusline{font-size:10.5px;color:var(--text-3);margin-top:8px;text-align:center}
+
+/* welcome */
+.welcome{background:linear-gradient(150deg,rgba(127,0,255,.14),rgba(232,182,76,.07));border:1px solid rgba(168,85,247,.25);
+         border-radius:var(--radius);padding:18px 20px}
+.welcome h2{margin:0 0 6px;font-size:17px;color:var(--gold)}
+.welcome p{margin:4px 0;font-size:13.5px;color:var(--text-2);line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo" aria-hidden="true">
+    <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
+    <i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i>
+    <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
+    <i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i>
+    <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
+  </div>
+  <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
+  <span class="ver-badge" id="verBadge">v1.0</span>
+  <div class="spacer"></div>
+  <div class="engine-pill" id="enginePill">checking engine…</div>
+</header>
+
+<main>
+  <div class="teacher-col">
+    <div class="teacher-card" id="teacherCard">
+      <div class="avatar-wrap">
+      <!-- Meera Miss — stylised Kerala teacher avatar -->
+      <svg viewBox="0 0 220 230" xmlns="http://www.w3.org/2000/svg" aria-label="Meera Miss, your teacher">
+        <defs>
+          <linearGradient id="sareeG" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f7f0dc"/><stop offset="1" stop-color="#efe3c3"/>
+          </linearGradient>
+          <linearGradient id="goldG" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#e8b64c"/><stop offset="1" stop-color="#c98f1e"/>
+          </linearGradient>
+          <radialGradient id="cheekG" cx=".5" cy=".5" r=".5">
+            <stop offset="0" stop-color="#e58f6a" stop-opacity=".55"/><stop offset="1" stop-color="#e58f6a" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <!-- halo -->
+        <circle cx="110" cy="112" r="96" fill="rgba(127,0,255,.14)"/>
+        <circle cx="110" cy="112" r="96" fill="none" stroke="rgba(232,182,76,.35)" stroke-width="1.5"/>
+        <!-- shoulders / blouse + saree -->
+        <path d="M38 230 Q40 176 78 165 L142 165 Q180 176 182 230 Z" fill="#5b21b6"/>
+        <path d="M38 230 Q40 176 78 165 L98 165 Q60 190 58 230 Z" fill="url(#sareeG)"/>
+        <path d="M120 165 L142 165 Q180 176 182 230 L156 230 Q152 190 120 165 Z" fill="url(#sareeG)"/>
+        <path d="M120 165 Q150 186 154 230 L146 230 Q142 192 116 169 Z" fill="url(#goldG)"/>
+        <!-- neck -->
+        <path d="M96 138 L124 138 L124 168 Q110 178 96 168 Z" fill="#c1794f"/>
+        <path d="M96 152 Q110 162 124 152 L124 168 Q110 178 96 168 Z" fill="#b06a41" opacity=".55"/>
+        <!-- gold necklace -->
+        <path d="M97 166 Q110 176 123 166" fill="none" stroke="url(#goldG)" stroke-width="3" stroke-linecap="round"/>
+        <g class="head-group">
+          <!-- earrings (jhumka) -->
+          <circle cx="66" cy="124" r="3" fill="#e8b64c"/><path d="M63 126 a4.5 5 0 0 0 7 0 z" fill="url(#goldG)"/>
+          <circle cx="154" cy="124" r="3" fill="#e8b64c"/><path d="M151 126 a4.5 5 0 0 0 7 0 z" fill="url(#goldG)"/>
+          <!-- face -->
+          <ellipse cx="110" cy="106" rx="44" ry="48" fill="#c98456"/>
+          <ellipse cx="110" cy="108" rx="43" ry="46" fill="#d18d5e"/>
+          <!-- hair: parted, low bun -->
+          <path d="M66 108 Q60 48 110 44 Q160 48 154 108 Q156 78 138 68 Q142 78 136 74 Q120 62 110 63 Q100 62 84 74 Q78 78 82 68 Q64 78 66 108 Z" fill="#241a17"/>
+          <path d="M110 44 Q100 52 84 74 L110 63 L136 74 Q120 52 110 44 Z" fill="#2e211c"/>
+          <ellipse cx="158" cy="140" rx="15" ry="16" fill="#241a17"/>
+          <ellipse cx="158" cy="140" rx="15" ry="16" fill="none" stroke="#170f0d" stroke-width="1" opacity=".5"/>
+          <!-- jasmine (mullappoo) on the bun -->
+          <g fill="#fdfaf1">
+            <circle cx="150" cy="130" r="2.6"/><circle cx="156" cy="127.5" r="2.6"/><circle cx="162" cy="129" r="2.6"/>
+            <circle cx="166" cy="133.5" r="2.6"/><circle cx="167" cy="139" r="2.6"/>
+          </g>
+          <!-- bindi -->
+          <circle cx="110" cy="84" r="3" fill="#c0243a"/>
+          <!-- brows -->
+          <path d="M84 90 Q92 85 100 89" fill="none" stroke="#241a17" stroke-width="2.6" stroke-linecap="round"/>
+          <path d="M120 89 Q128 85 136 90" fill="none" stroke="#241a17" stroke-width="2.6" stroke-linecap="round"/>
+          <!-- eyes (blink via scaleY) -->
+          <g class="eye" style="transform-origin:92px 99px">
+            <ellipse cx="92" cy="99" rx="7.4" ry="5" fill="#fff"/>
+            <circle cx="92.6" cy="99.6" r="3.4" fill="#3b2314"/><circle cx="93.7" cy="98.4" r="1.1" fill="#fff"/>
+            <path d="M84.5 97.5 Q92 92.5 99.5 97.3" fill="none" stroke="#241a17" stroke-width="1.7" stroke-linecap="round"/>
+          </g>
+          <g class="eye" style="transform-origin:128px 99px">
+            <ellipse cx="128" cy="99" rx="7.4" ry="5" fill="#fff"/>
+            <circle cx="128.6" cy="99.6" r="3.4" fill="#3b2314"/><circle cx="129.7" cy="98.4" r="1.1" fill="#fff"/>
+            <path d="M120.5 97.3 Q128 92.5 135.5 97.5" fill="none" stroke="#241a17" stroke-width="1.7" stroke-linecap="round"/>
+          </g>
+          <!-- nose + nose pin -->
+          <path d="M109 102 Q107 112 104.5 115 Q108 118 112 116" fill="none" stroke="#b06a41" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="103" cy="113" r="1.4" fill="#e8b64c"/>
+          <!-- cheeks -->
+          <ellipse cx="84" cy="115" rx="9" ry="6" fill="url(#cheekG)"/>
+          <ellipse cx="136" cy="115" rx="9" ry="6" fill="url(#cheekG)"/>
+          <!-- mouth visemes -->
+          <g id="mouth">
+            <path id="m-smile" d="M96 126 Q110 137 124 126 Q110 132 96 126 Z" fill="#a34a4a"/>
+            <ellipse id="m-open" cx="110" cy="129" rx="8.5" ry="6" fill="#8c3a3a" style="display:none"/>
+            <path id="m-mid" d="M99 127 Q110 134 121 127 Q110 139 99 127 Z" fill="#8c3a3a" style="display:none"/>
+          </g>
+        </g>
+      </svg>
+      </div>
+      <div>
+        <div class="tname">Meera&nbsp;Miss</div>
+        <div class="trole">Your friendly foundations teacher<br>from Kerala 🌸</div>
+        <div class="tstatus" id="tstatus">Ask me anything from your textbooks!</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-col">
+    <div id="feed">
+      <div class="welcome">
+        <h2>Namaskaram! I'm Meera Miss 🙏</h2>
+        <p>I have studied all the <b>NCERT textbooks from Class 1 to Class 12</b> — English, Mathematics, Science (Physics, Chemistry, Biology), Social Studies (History, Geography, Economics, Political Science), Commerce, Accountancy and more.</p>
+        <p>Ask me any question. I will explain it in very simple words, show you <b>lesson slides</b>, and I can even <b>speak the lesson aloud</b> 🔊. Choose your class below so I pick the right book.</p>
+      </div>
+    </div>
+
+    <div class="composer">
+      <div class="comp-row">
+        <select id="classSel" title="Your class">
+          <option value="0">All classes</option>
+          <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option>
+          <option value="4">Class 4</option><option value="5">Class 5</option><option value="6">Class 6</option>
+          <option value="7">Class 7</option><option value="8">Class 8</option><option value="9">Class 9</option>
+          <option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+        </select>
+        <textarea id="q" rows="1" placeholder="Ask your question… e.g. Why does the moon change shape?"></textarea>
+        <button id="send" title="Ask">➤</button>
+      </div>
+      <div class="hintrow" id="hints">
+        <span class="hint">Why is the sky blue?</span>
+        <span class="hint">What is photosynthesis?</span>
+        <span class="hint">Explain fractions with an example</span>
+        <span class="hint">What is democracy?</span>
+        <span class="hint">What is a balance sheet?</span>
+      </div>
+      <div class="statusline" id="statusline">…</div>
+    </div>
+  </div>
+</main>
+
+<script>
+'use strict';
+/* ============================ avatar animation ============================ */
+const eyes = document.querySelectorAll('.eye');
+function blink(){
+  eyes.forEach(e => { e.style.transition='transform .09s'; e.style.transform='scaleY(.08)'; });
+  setTimeout(()=>eyes.forEach(e => e.style.transform='scaleY(1)'), 120);
+  setTimeout(blink, 2400 + Math.random()*2600);
+}
+setTimeout(blink, 1500);
+
+const mouthShapes = ['m-smile','m-mid','m-open'];
+let mouthTimer = null;
+function setMouth(id){
+  mouthShapes.forEach(m => document.getElementById(m).style.display = (m===id?'':'none'));
+}
+function startTalking(){
+  document.getElementById('teacherCard').classList.add('speaking');
+  const st = document.getElementById('tstatus');
+  st.textContent = '🔊 Teaching…'; st.classList.add('speaking');
+  if (mouthTimer) clearInterval(mouthTimer);
+  mouthTimer = setInterval(()=>{
+    setMouth(mouthShapes[1 + Math.floor(Math.random()*2)]);
+    setTimeout(()=>setMouth(Math.random()<.3?'m-smile':'m-mid'), 90);
+  }, 190);
+}
+function stopTalking(){
+  document.getElementById('teacherCard').classList.remove('speaking');
+  const st = document.getElementById('tstatus');
+  st.textContent = 'Ask me anything from your textbooks!'; st.classList.remove('speaking');
+  if (mouthTimer) { clearInterval(mouthTimer); mouthTimer = null; }
+  setMouth('m-smile');
+}
+
+/* ============================ speech (TTS) ============================ */
+let voice = null;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  if (!vs.length) return;
+  voice = vs.find(v => /en-IN/i.test(v.lang) && /neerja|heera|female|natural/i.test(v.name))
+       || vs.find(v => /en-IN/i.test(v.lang))
+       || vs.find(v => /en-GB/i.test(v.lang) && /female|sonia|libby/i.test(v.name))
+       || vs.find(v => v.lang.startsWith('en')) || vs[0];
+}
+if ('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+
+let speakingNow = false;
+function speak(text, btn){
+  if (!('speechSynthesis' in window)) return;
+  stopSpeak();
+  const clean = text
+    .replace(/[#*_`>|]/g,' ')
+    .replace(/\[(.*?)\]\(.*?\)/g,'$1')
+    .replace(/\s+/g,' ').trim();
+  if (!clean) return;
+  // chunk long text so mobile TTS doesn't cut off
+  const parts = clean.match(/[^.!?]+[.!?]+|\S[^.!?]*$/g) || [clean];
+  const groups = [];
+  let cur = '';
+  for (const p of parts){
+    if ((cur+p).length > 220){ if(cur) groups.push(cur); cur = p; } else cur += p;
+  }
+  if (cur) groups.push(cur);
+  speakingNow = true; startTalking();
+  if (btn) btn.textContent = '⏹ Stop';
+  let i = 0;
+  const next = () => {
+    if (!speakingNow || i >= groups.length){ endSpeak(btn); return; }
+    const u = new SpeechSynthesisUtterance(groups[i++]);
+    if (voice) u.voice = voice;
+    u.rate = 0.97; u.pitch = 1.06;
+    u.onend = next;
+    u.onerror = () => endSpeak(btn);
+    speechSynthesis.speak(u);
+  };
+  next();
+}
+function endSpeak(btn){
+  speakingNow = false; stopTalking();
+  if (btn) btn.textContent = '🔊 Play lesson';
+  document.querySelectorAll('.abtn.playing').forEach(b => { b.textContent='🔊 Play lesson'; b.classList.remove('playing'); });
+}
+function stopSpeak(){
+  speakingNow = false;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  stopTalking();
+}
+
+/* ============================ markdown (tiny, safe) ============================ */
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function md(src){
+  src = esc(src);
+  const codes = [];
+  src = src.replace(/```([\s\S]*?)```/g, (m,c)=>{ codes.push(c.replace(/^\w*\n/,'')); return ' C'+(codes.length-1)+' '; });
+  src = src.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  src = src.replace(/^###?#?\s*(.+)$/gm, '<h3>$1</h3>');
+  src = src.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  src = src.replace(/(^|\s)\*([^*\n]+)\*(?=\s|[.,!?]|$)/g, '$1<em>$2</em>');
+  // lists
+  src = src.replace(/(^|\n)((?:[-*] .*(?:\n|$))+)/g, (m, pre, block) =>
+    pre + '<ul>' + block.trim().split('\n').map(l=>'<li>'+l.replace(/^[-*] /,'')+'</li>').join('') + '</ul>');
+  src = src.replace(/(^|\n)((?:\d+[.)] .*(?:\n|$))+)/g, (m, pre, block) =>
+    pre + '<ol>' + block.trim().split('\n').map(l=>'<li>'+l.replace(/^\d+[.)] /,'')+'</li>').join('') + '</ol>');
+  // paragraphs
+  src = src.split(/\n{2,}/).map(p => /^<(h3|ul|ol|pre)/.test(p.trim()) ? p : '<p>'+p.replace(/\n/g,'<br>')+'</p>').join('');
+  src = src.replace(/ C(\d+) /g, (m,i)=>'<pre><code>'+codes[+i]+'</code></pre>');
+  return src;
+}
+
+/* ============================ slides ============================ */
+function parseSlides(text){
+  const out = [];
+  for (const line of text.split('\n')){
+    const m = /^\s*Slide\s*\d*\s*[:.-]\s*(.+)$/i.exec(line.trim());
+    if (!m) continue;
+    const segs = m[1].split('|').map(s=>s.trim());
+    const title = segs[0] || 'Lesson';
+    let emoji = '📘', pts = '';
+    if (segs.length >= 3){ emoji = segs[1] || '📘'; pts = segs.slice(2).join('|'); }
+    else if (segs.length === 2){ pts = segs[1]; }
+    const points = pts.split(/;;|;/).map(s=>s.trim()).filter(Boolean).slice(0,5);
+    if (title) out.push({ title, emoji, points });
+  }
+  return out.slice(0,8);
+}
+function renderDeck(container, slides){
+  if (!slides.length) return;
+  const deck = document.createElement('div');
+  deck.className = 'deck';
+  deck.innerHTML = '<div class="deck-head">📽️ LESSON SLIDES</div><div class="slide"></div>' +
+    '<div class="deck-nav"><button class="prev">‹</button><div class="deck-dots"></div><button class="next">›</button></div>';
+  const slideEl = deck.querySelector('.slide');
+  const dots = deck.querySelector('.deck-dots');
+  slides.forEach(()=>{ const i=document.createElement('i'); dots.appendChild(i); });
+  let cur = 0;
+  function show(n){
+    cur = Math.max(0, Math.min(slides.length-1, n));
+    const s = slides[cur];
+    slideEl.innerHTML = '<div class="emoji">'+esc(s.emoji)+'</div><h3>'+esc(s.title)+'</h3><ul>' +
+      s.points.map((p,i)=>'<li style="animation-delay:'+(0.15+i*0.22)+'s">'+esc(p)+'</li>').join('') + '</ul>';
+    dots.querySelectorAll('i').forEach((d,i)=>d.classList.toggle('on', i===cur));
+    deck.querySelector('.prev').disabled = cur===0;
+    deck.querySelector('.next').disabled = cur===slides.length-1;
+  }
+  deck.querySelector('.prev').onclick = ()=>show(cur-1);
+  deck.querySelector('.next').onclick = ()=>show(cur+1);
+  show(0);
+  container.appendChild(deck);
+}
+
+/* ============================ chat ============================ */
+const feed = document.getElementById('feed');
+const qEl = document.getElementById('q');
+const sendBtn = document.getElementById('send');
+const history = [];
+let busy = false;
+
+function autoSize(){
+  qEl.style.height = 'auto';
+  qEl.style.height = Math.min(qEl.scrollHeight, 180) + 'px';
+}
+qEl.addEventListener('input', autoSize);
+autoSize();
+
+qEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); ask(); }
+});
+sendBtn.addEventListener('click', ask);
+document.getElementById('hints').addEventListener('click', e => {
+  if (e.target.classList.contains('hint')){ qEl.value = e.target.textContent; autoSize(); ask(); }
+});
+
+function addUserMsg(text){
+  const m = document.createElement('div');
+  m.className = 'msg user'; m.textContent = text;
+  feed.appendChild(m);
+}
+function scrollDown(){ requestAnimationFrame(()=>window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'})); }
+
+function ask(){
+  const question = qEl.value.trim();
+  if (!question || busy) return;
+  busy = true; sendBtn.disabled = true;
+  stopSpeak();
+  qEl.value = ''; autoSize();
+  addUserMsg(question);
+
+  const bot = document.createElement('div');
+  bot.className = 'msg bot';
+  bot.innerHTML = '<div class="who">MEERA MISS</div><div class="srcbox"></div>' +
+    '<div class="body"><span class="typing"><i></i><i></i><i></i></span></div><div class="extra"></div>';
+  feed.appendChild(bot);
+  scrollDown();
+  const bodyEl = bot.querySelector('.body');
+  const srcBox = bot.querySelector('.srcbox');
+  const extra = bot.querySelector('.extra');
+  document.getElementById('tstatus').textContent = '🤔 Thinking…';
+
+  let raw = '', gotFirst = false, lastRender = 0;
+  const render = (force) => {
+    const now = Date.now();
+    if (!force && now - lastRender < 250) return;
+    lastRender = now;
+    let explain = raw;
+    const si = raw.indexOf('[SLIDES]');
+    const ei = raw.indexOf('[EXPLAIN]');
+    if (ei !== -1) explain = raw.slice(ei + 9);
+    if (si !== -1) explain = (ei !== -1 ? raw.slice(ei + 9, si) : raw.slice(0, si));
+    explain = explain.replace(/\[END\]\s*$/,'').trim();
+    bodyEl.innerHTML = md(explain) || '<span class="typing"><i></i><i></i><i></i></span>';
+  };
+
+  fetch('/api/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question, class: +document.getElementById('classSel').value, history: history.slice(-6) }),
+  }).then(async resp => {
+    if (!resp.ok || !resp.body) throw new Error('HTTP ' + resp.status);
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    for(;;){
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf('\n\n')) !== -1){
+        const frame = buf.slice(0, nl); buf = buf.slice(nl + 2);
+        for (const line of frame.split('\n')){
+          if (!line.startsWith('data:')) continue;
+          let j; try { j = JSON.parse(line.slice(5)); } catch(e){ continue; }
+          if (j.sources){
+            if (j.sources.length){
+              srcBox.innerHTML = '<div class="sources">' + j.sources.map(s =>
+                '<span class="chip">📖 Class '+s.class+' '+esc(s.subject)+' — '+esc(s.chapter)+'</span>').join('') + '</div>';
+            }
+          } else if (j.t){
+            raw += j.t; gotFirst = true; render(false);
+          } else if (j.error){
+            bodyEl.innerHTML = '<span class="errline">'+esc(j.error)+'</span>';
+          }
+        }
+      }
+    }
+    render(true);
+    finishAnswer();
+  }).catch(err => {
+    bodyEl.innerHTML = '<span class="errline">Could not reach the teacher server ('+esc(err.message)+'). Please try again.</span>';
+    finishAnswer(true);
+  });
+
+  function finishAnswer(failed){
+    busy = false; sendBtn.disabled = false;
+    document.getElementById('tstatus').textContent = 'Ask me anything from your textbooks!';
+    if (failed || !raw) return;
+    let explain = raw;
+    const ei = raw.indexOf('[EXPLAIN]'), si = raw.indexOf('[SLIDES]');
+    if (ei !== -1) explain = si !== -1 ? raw.slice(ei+9, si) : raw.slice(ei+9);
+    else if (si !== -1) explain = raw.slice(0, si);
+    explain = explain.replace(/\[END\]\s*$/,'').trim();
+    history.push({ role:'user', content: question });
+    history.push({ role:'assistant', content: explain.slice(0, 3000) });
+    if (si !== -1){
+      const slides = parseSlides(raw.slice(si + 8).replace(/\[END\][\s\S]*$/,''));
+      renderDeck(extra, slides);
+    }
+    const acts = document.createElement('div');
+    acts.className = 'actions';
+    const play = document.createElement('button');
+    play.className = 'abtn primary'; play.textContent = '🔊 Play lesson';
+    play.onclick = () => {
+      if (speakingNow){ stopSpeak(); play.textContent='🔊 Play lesson'; play.classList.remove('playing'); }
+      else { document.querySelectorAll('.abtn.playing').forEach(b=>{b.textContent='🔊 Play lesson';b.classList.remove('playing');}); play.classList.add('playing'); speak(explain, play); }
+    };
+    acts.appendChild(play);
+    extra.appendChild(acts);
+    scrollDown();
+  }
+}
+
+/* ============================ status ============================ */
+function refreshStatus(){
+  fetch('/api/status').then(r=>r.json()).then(s => {
+    const pill = document.getElementById('enginePill');
+    const cloud = s.engine === 'cloud';
+    const up = cloud || s.localEngineUp;
+    pill.classList.toggle('off', !up);
+    pill.innerHTML = (cloud ? 'Engine: <b>IBI Cloud</b>' :
+      'Engine: <b>' + (s.localEngineUp ? 'IBI Local ✓' : 'IBI Local — offline') + '</b>');
+    const line = document.getElementById('statusline');
+    const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
+    line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
+      (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
+      ' · IBI Skilled Foundations Teacher v1.0';
+  }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
+}
+refreshStatus();
+setInterval(refreshStatus, 60000);
+</script>
+</body>
+</html>

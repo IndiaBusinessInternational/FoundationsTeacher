@@ -1,0 +1,5 @@
+# The laptop IS the server. Nothing under Backend\ is ever published:
+# config.json holds the access PIN, textbooks\ is ~10 GB of PDFs and
+# data\ is the built index + logs.
+Backend/
+CNAME.pending
