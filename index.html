@@ -108,6 +108,7 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
 .deck-head{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:11.5px;font-weight:700;color:var(--gold);
            letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.07)}
 .dh-spacer{flex:1}
+.dh-count{font-size:10.5px;color:var(--text-3);font-weight:600;margin-left:4px}
 .dh-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:var(--text);width:30px;height:30px;
         border-radius:8px;cursor:pointer;font-size:15px;line-height:1;flex:0 0 auto}
 .dh-btn:hover{background:rgba(255,255,255,.14)}
@@ -176,7 +177,7 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.2</span>
+  <span class="ver-badge" id="verBadge">v1.3</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
 </header>
@@ -349,46 +350,86 @@ function pickVoice(){
 }
 if ('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 
-let speakingNow = false;
-function speak(text, btn){
-  if (!('speechSynthesis' in window)) return;
-  stopSpeak();
-  const clean = text
-    .replace(/[#*_`>|]/g,' ')
-    .replace(/\[(.*?)\]\(.*?\)/g,'$1')
-    .replace(/\s+/g,' ').trim();
-  if (!clean) return;
-  // chunk long text so mobile TTS doesn't cut off
-  const parts = clean.match(/[^.!?]+[.!?]+|\S[^.!?]*$/g) || [clean];
-  const groups = [];
-  let cur = '';
+let speakingNow = false, speakToken = 0;
+
+function cleanForSpeech(t){
+  return t.replace(/```[\s\S]*?```/g,' ')
+          .replace(/\[(.*?)\]\(.*?\)/g,'$1')
+          .replace(/[#*_`>|]/g,' ')
+          .replace(/\s+/g,' ').trim();
+}
+// break long text where the TTS engine can breathe (mobile cuts off ~250 chars)
+function speechGroups(text){
+  const parts = text.match(/[^.!?]+[.!?]+|\S[^.!?]*$/g) || [text];
+  const out = []; let cur = '';
   for (const p of parts){
-    if ((cur+p).length > 220){ if(cur) groups.push(cur); cur = p; } else cur += p;
+    if ((cur + p).length > 220){ if (cur) out.push(cur); cur = p; } else cur += p;
   }
-  if (cur) groups.push(cur);
+  if (cur.trim()) out.push(cur);
+  return out;
+}
+// the lesson's own sections — headings first, else sentence groups
+function lessonSections(explain){
+  const byHeading = explain.split(/\n(?=#{2,4}\s)/).map(s => cleanForSpeech(s)).filter(Boolean);
+  if (byHeading.length >= 2) return byHeading;
+  return speechGroups(cleanForSpeech(explain));
+}
+
+function markPlaying(btn, stopLabel){
+  if (!btn) return;
+  if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+  btn.textContent = stopLabel;
+  btn.classList.add('playing');
+}
+function resetButtons(){
+  document.querySelectorAll('.playing').forEach(b => {
+    if (b.dataset.label) b.textContent = b.dataset.label;
+    b.classList.remove('playing');
+  });
+}
+
+/* Speaks a list of {text, onStart} items in order, running each item's
+   onStart as its narration begins — that is what moves the slides along
+   with the topic. Every callback is tied to a token so a cancelled run's
+   stray onend (some browsers fire it on cancel) cannot restart playback. */
+function speakItems(items, opts){
+  opts = opts || {};
+  if (!('speechSynthesis' in window)) return false;
+  stopSpeak();
+  const token = ++speakToken;
+  const steps = [];
+  for (const it of items){
+    const groups = speechGroups(it.text);
+    if (!groups.length && it.onStart) steps.push({ text: '', onStart: it.onStart });
+    groups.forEach((g, gi) => steps.push({ text: g, onStart: gi === 0 ? it.onStart : null }));
+  }
+  if (!steps.length) return false;
   speakingNow = true; startTalking();
-  if (btn) btn.textContent = '⏹ Stop';
+  markPlaying(opts.btn, opts.stopLabel || '⏹ Stop');
   let i = 0;
   const next = () => {
-    if (!speakingNow || i >= groups.length){ endSpeak(btn); return; }
-    const u = new SpeechSynthesisUtterance(groups[i++]);
+    if (token !== speakToken || !speakingNow) return;
+    if (i >= steps.length){ endSpeak(); if (opts.onEnd) opts.onEnd(); return; }
+    const step = steps[i++];
+    if (step.onStart){ try { step.onStart(); } catch(e){} }
+    if (!step.text){ next(); return; }
+    const u = new SpeechSynthesisUtterance(step.text);
     if (voice) u.voice = voice;
-    u.rate = 0.97; u.pitch = 1.06;
+    u.rate = opts.rate || 0.97; u.pitch = 1.06;
     u.onend = next;
-    u.onerror = () => endSpeak(btn);
+    u.onerror = () => { if (token === speakToken){ endSpeak(); if (opts.onEnd) opts.onEnd(); } };
     speechSynthesis.speak(u);
   };
   next();
+  return true;
 }
-function endSpeak(btn){
-  speakingNow = false; stopTalking();
-  if (btn) btn.textContent = '🔊 Play lesson';
-  document.querySelectorAll('.abtn.playing').forEach(b => { b.textContent='🔊 Play lesson'; b.classList.remove('playing'); });
+function endSpeak(){
+  speakingNow = false; stopTalking(); resetButtons();
 }
 function stopSpeak(){
-  speakingNow = false;
+  speakingNow = false; speakToken++;
   try{ speechSynthesis.cancel(); }catch(e){}
-  stopTalking();
+  stopTalking(); resetButtons();
 }
 
 /* ============================ markdown (tiny, safe) ============================ */
@@ -396,7 +437,7 @@ function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/
 function md(src){
   src = esc(src);
   const codes = [];
-  src = src.replace(/```([\s\S]*?)```/g, (m,c)=>{ codes.push(c.replace(/^\w*\n/,'')); return ' C'+(codes.length-1)+' '; });
+  src = src.replace(/```([\s\S]*?)```/g, (m,c)=>{ codes.push(c.replace(/^\w*\n/,'')); return '\x01C'+(codes.length-1)+'\x01'; });
   src = src.replace(/`([^`\n]+)`/g, '<code>$1</code>');
   src = src.replace(/^###?#?\s*(.+)$/gm, '<h3>$1</h3>');
   src = src.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -408,7 +449,7 @@ function md(src){
     pre + '<ol>' + block.trim().split('\n').map(l=>'<li>'+l.replace(/^\d+[.)] /,'')+'</li>').join('') + '</ol>');
   // paragraphs
   src = src.split(/\n{2,}/).map(p => /^<(h3|ul|ol|pre)/.test(p.trim()) ? p : '<p>'+p.replace(/\n/g,'<br>')+'</p>').join('');
-  src = src.replace(/ C(\d+) /g, (m,i)=>'<pre><code>'+codes[+i]+'</code></pre>');
+  src = src.replace(/\x01C(\d+)\x01/g, (m,i)=>'<pre><code>'+codes[+i]+'</code></pre>');
   return src;
 }
 
@@ -432,26 +473,33 @@ function renderDeck(container, slides){
   if (!slides.length) return;
   const deck = document.createElement('div');
   deck.className = 'deck';
-  deck.innerHTML = '<div class="deck-head">📽️ LESSON SLIDES<span class="dh-spacer"></span>' +
+  deck.innerHTML = '<div class="deck-head">📽️ LESSON SLIDES<span class="dh-count"></span><span class="dh-spacer"></span>' +
+    '<button class="dh-btn playbtn" title="Teach these slides aloud — the slides move with the lesson">▶</button>' +
     '<button class="dh-btn fsbtn" title="Full screen (covers the whole screen)">⛶</button>' +
     '<button class="dh-btn closebtn" title="Exit full screen" style="display:none">✕</button></div>' +
     '<div class="slide"></div>' +
     '<div class="deck-nav"><button class="prev">‹</button><div class="deck-dots"></div><button class="next">›</button></div>';
   const slideEl = deck.querySelector('.slide');
   const dots = deck.querySelector('.deck-dots');
+  const counter = deck.querySelector('.dh-count');
   slides.forEach(()=>{ const i=document.createElement('i'); dots.appendChild(i); });
-  let cur = 0;
+  let cur = -1;
   function show(n){
-    cur = Math.max(0, Math.min(slides.length-1, n));
+    const want = Math.max(0, Math.min(slides.length-1, n));
+    if (want === cur) return;                  // don't restart the animation
+    cur = want;
     const s = slides[cur];
     slideEl.innerHTML = '<div class="emoji">'+esc(s.emoji)+'</div><h3>'+esc(s.title)+'</h3><ul>' +
       s.points.map((p,i)=>'<li style="animation-delay:'+(0.15+i*0.22)+'s">'+esc(p)+'</li>').join('') + '</ul>';
     dots.querySelectorAll('i').forEach((d,i)=>d.classList.toggle('on', i===cur));
+    counter.textContent = ' ' + (cur+1) + ' / ' + slides.length;
     deck.querySelector('.prev').disabled = cur===0;
     deck.querySelector('.next').disabled = cur===slides.length-1;
   }
-  deck.querySelector('.prev').onclick = ()=>show(cur-1);
-  deck.querySelector('.next').onclick = ()=>show(cur+1);
+  // a human taking control stops the narration, so the two never fight
+  function userGo(n){ if (speakingNow) stopSpeak(); show(n); }
+  deck.querySelector('.prev').onclick = ()=>userGo(cur-1);
+  deck.querySelector('.next').onclick = ()=>userGo(cur+1);
 
   /* full screen: native API on laptop/Android, fixed overlay everywhere
      (iPhone Safari cannot fullscreen a div) — both give a whole-screen deck */
@@ -462,7 +510,7 @@ function renderDeck(container, slides){
     closebtn.style.display = on ? '' : 'none';
     if (on){
       if (deck.requestFullscreen) deck.requestFullscreen().catch(()=>{});
-      show(cur);                       // replay point animations big
+      const c = cur; cur = -1; show(c);   // replay the point animations, big
     } else if (document.fullscreenElement === deck){
       document.exitFullscreen().catch(()=>{});
     }
@@ -477,20 +525,37 @@ function renderDeck(container, slides){
   if (!document.documentElement.requestFullscreen) deck.dataset.overlayOnly = '1';
   document.addEventListener('keydown', e => {
     if (!deck.classList.contains('fs')) return;
-    if (e.key === 'ArrowRight') show(cur+1);
-    else if (e.key === 'ArrowLeft') show(cur-1);
+    if (e.key === 'ArrowRight') userGo(cur+1);
+    else if (e.key === 'ArrowLeft') userGo(cur-1);
     else if (e.key === 'Escape') setFs(false);
+    else if (e.key === ' '){ e.preventDefault(); togglePresent(); }
   });
   let tx = null;
   slideEl.addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, {passive:true});
   slideEl.addEventListener('touchend', e => {
     if (tx === null) return;
     const dx = e.changedTouches[0].clientX - tx; tx = null;
-    if (Math.abs(dx) > 45) show(cur + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > 45) userGo(cur + (dx < 0 ? 1 : -1));
   }, {passive:true});
+
+  /* presenter mode: S. Sastika reads each slide and the deck turns with her */
+  const playbtn = deck.querySelector('.playbtn');
+  function present(){
+    const items = slides.map((s, i) => ({
+      text: s.title + '. ' + s.points.join('. ') + '.',
+      onStart: () => show(i),
+    }));
+    speakItems(items, { btn: playbtn, stopLabel: '⏹', rate: 0.95 });
+  }
+  function togglePresent(){
+    if (speakingNow) stopSpeak();
+    else present();
+  }
+  playbtn.onclick = togglePresent;
 
   show(0);
   container.appendChild(deck);
+  return { show, count: slides.length, present };
 }
 
 /* ============================ chat ============================ */
@@ -605,19 +670,33 @@ function ask(){
     explain = explain.replace(/\[END\]\s*$/,'').trim();
     history.push({ role:'user', content: question });
     history.push({ role:'assistant', content: explain.slice(0, 3000) });
+    let deckApi = null;
     if (si !== -1){
       const slides = parseSlides(raw.slice(si + 8).replace(/\[END\][\s\S]*$/,''));
-      renderDeck(extra, slides);
+      deckApi = renderDeck(extra, slides);
     }
     const acts = document.createElement('div');
     acts.className = 'actions';
     const play = document.createElement('button');
     play.className = 'abtn primary'; play.textContent = '🔊 Play lesson';
     play.onclick = () => {
-      if (speakingNow){ stopSpeak(); play.textContent='🔊 Play lesson'; play.classList.remove('playing'); }
-      else { document.querySelectorAll('.abtn.playing').forEach(b=>{b.textContent='🔊 Play lesson';b.classList.remove('playing');}); play.classList.add('playing'); speak(explain, play); }
+      if (speakingNow){ stopSpeak(); return; }
+      // speak the lesson section by section; the deck follows the topic
+      const secs = lessonSections(explain);
+      const N = deckApi ? deckApi.count : 0;
+      const items = secs.map((t, i) => ({
+        text: t,
+        onStart: N ? () => deckApi.show(Math.min(N - 1, Math.floor(i * N / secs.length))) : null,
+      }));
+      speakItems(items, { btn: play });
     };
     acts.appendChild(play);
+    if (deckApi){
+      const teach = document.createElement('button');
+      teach.className = 'abtn'; teach.textContent = '📽️ Teach the slides';
+      teach.onclick = () => { if (speakingNow) stopSpeak(); else deckApi.present(); };
+      acts.appendChild(teach);
+    }
     extra.appendChild(acts);
     scrollDown();
   }
@@ -636,7 +715,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.2';
+      ' · IBI Skilled Foundations Teacher v1.3';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
