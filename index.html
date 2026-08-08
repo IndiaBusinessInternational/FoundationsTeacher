@@ -207,9 +207,10 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.11</span>
+  <span class="ver-badge" id="verBadge">v1.12</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
+  <button class="engine-pill" id="clearChat" title="Clear saved chat history" style="cursor:pointer">🗑</button>
 </header>
 
 <main>
@@ -398,11 +399,13 @@ function makePortrait(canvas){
 /* visemes: real mouths form SHAPES per sound, not just open/close.
    We know the text being spoken and how far playback has reached, so the
    lips round for O/U, widen for E/I, close for M/B/P and between words. */
-const VISEMES = {   // tf = teeth height as a fraction of the mouth opening
-  open:   { rx:0.047, hK:0.030, teeth:1, tf:0.15 },
-  wide:   { rx:0.058, hK:0.016, teeth:1, tf:0.26 },
-  round:  { rx:0.030, hK:0.028, teeth:0, tf:0 },
-  closed: { rx:0.044, hK:0.006, teeth:0, tf:0 },
+/* No painted opening — only her OWN lips move (user's preference after
+   trying drawn interiors): hK drives the jaw drop, w the lip width. */
+const VISEMES = {
+  open:   { hK:0.034, w:1.00 },
+  wide:   { hK:0.018, w:1.07 },
+  round:  { hK:0.030, w:0.92 },
+  closed: { hK:0.007, w:1.00 },
 };
 let speechText = '', speechFrac = -1;   // set by the speech players
 function visemeAt(text, frac){
@@ -418,7 +421,7 @@ function visemeAt(text, frac){
   }
   return 'open';
 }
-let mRx = VISEMES.open.rx, mH = 0, mTeeth = 1, mTf = 0.15;   // smoothed mouth state
+let mH = 0, mW = 1;   // smoothed mouth state (jaw openness, lip width)
 let lastFrameAt = 0;
 function portraitFrame(t){
   requestAnimationFrame(portraitFrame);
@@ -454,10 +457,8 @@ function renderPortraits(t){
     if (frac >= 0) vis = visemeAt(speechText, frac);
   }
   const V = VISEMES[vis];
-  mRx += (V.rx - mRx) * 0.35;
-  mH  += (V.hK * Math.min(1, audioLevel * 1.4) - mH) * 0.45;
-  mTeeth += (V.teeth - mTeeth) * 0.4;
-  mTf += (V.tf - mTf) * 0.4;
+  mH += (V.hK * Math.min(1, audioLevel * 1.4) - mH) * 0.5;
+  mW += ((speakingNow ? V.w : 1) - mW) * 0.4;
   const img = document.getElementById('teacherPhoto');
   if (!img || !img.naturalWidth) return;
   for (const c of portraits){
@@ -470,39 +471,19 @@ function renderPortraits(t){
     const sway = Math.sin(t/1300) * 0.012 + (speakingNow ? Math.sin(t/460) * 0.014 * (0.3+audioLevel) : 0);
     ctx.translate(S/2, S*0.62); ctx.rotate(sway); ctx.translate(-S/2, -S*0.62);
     ctx.drawImage(img, 0, 0, iw, ih, 0, 0, iw*s, ih*s);
-    if (mH > 0.003){
-      const openF = Math.min(1, mH / 0.030);          // how far the jaw is open
+    const openF = Math.min(1, mH / 0.032);            // how far the jaw is open
+    if (openF > 0.02 || Math.abs(mW - 1) > 0.005){
+      // jaw drops: mouth-to-chin strip stretched downward (amplified —
+      // this and the lip warp below are the WHOLE animation, nothing drawn)
       const sx = iw*MOUTH.x1, sw = iw*(MOUTH.x2-MOUTH.x1);
       const sy = ih*MOUTH.lipY, sh = ih*(MOUTH.botY-MOUTH.lipY);
-      // jaw drops: mouth-to-chin strip stretched downward
-      ctx.drawImage(img, sx, sy, sw, sh, sx*s, sy*s, sw*s, sh*s*(1 + 0.15*openF));
-      // the opening: dark mouth interior with a hint of teeth, shaped by
-      // the current viseme (frame-verified offline before shipping)
-      const h = ih*mH*s, yT = ih*MOUTH.openY*s;
-      const cx2 = iw*MOUTH.cx*s, rx = iw*mRx*(1 - 0.10*openF)*s;
-      if (h > 1.2){
-        ctx.save();
-        ctx.filter = 'blur(1px)';
-        // warm mouth interior with just a hint of tongue at the bottom;
-        // the visible element is a small, clear row of upper teeth
-        const grad = ctx.createLinearGradient(0, yT, 0, yT + h);
-        grad.addColorStop(0,    'rgba(84,31,33,0.94)');
-        grad.addColorStop(0.55, 'rgba(66,25,27,0.94)');
-        grad.addColorStop(1,    'rgba(140,72,76,0.94)');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.ellipse(cx2, yT + h/2, rx, h/2, 0, 0, Math.PI*2);
-        ctx.fill();
-        const tRy = Math.min(h * mTf, 5);
-        if (h > 4 && mTeeth > 0.4 && tRy > 0.8){
-          ctx.fillStyle = 'rgba(238,231,221,' + (0.9*mTeeth) + ')';
-          ctx.beginPath();
-          if (ctx.roundRect) ctx.roundRect(cx2 - rx*0.75, yT + 1, rx*1.5, 2*tRy, tRy);
-          else ctx.ellipse(cx2, yT + 1 + tRy, rx*0.75, tRy, 0, 0, Math.PI*2);
-          ctx.fill();
-        }
-        ctx.restore();
-      }
+      ctx.drawImage(img, sx, sy, sw, sh, sx*s, sy*s, sw*s, sh*s*(1 + 0.26*openF));
+      // her own lips move: the lip band widens for E/I, narrows and
+      // puckers for O/U, thickens as the jaw opens
+      const lx = iw*0.400, lw = iw*0.210;
+      const ly = ih*0.386, lh = ih*0.064;
+      const dw = lw*mW*s, dh = lh*(1 + 0.12*openF)*s;
+      ctx.drawImage(img, lx, ly, lw, lh, iw*MOUTH.cx*s - dw/2, ly*s, dw, dh);
     }
     ctx.restore();
   }
@@ -904,6 +885,53 @@ function addUserMsg(text){
 }
 function scrollDown(){ requestAnimationFrame(()=>window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'})); }
 
+function sourceChips(list){
+  return '<div class="sources">' + list.map(s =>
+    '<span class="chip">📖 Class '+s.class+' '+esc(s.subject)+' — '+esc(s.chapter)+'</span>').join('') + '</div>';
+}
+
+/* an answer's interactive parts (deck + play buttons) — used for live
+   answers AND for chats restored from storage */
+function wireAnswer(extra, explain, slides){
+  let deckApi = null;
+  if (slides && slides.length) deckApi = renderDeck(extra, slides);
+  const acts = document.createElement('div');
+  acts.className = 'actions';
+  const play = document.createElement('button');
+  play.className = 'abtn primary'; play.textContent = '🔊 Play lesson';
+  play.onclick = () => {
+    if (speakingNow){ stopSpeak(); return; }
+    if (deckApi) deckApi.setFs(true);
+    const secs = lessonSections(explain);
+    const N = deckApi ? deckApi.count : 0;
+    const items = secs.map((t, i) => ({
+      text: t,
+      onStart: N ? () => deckApi.show(Math.min(N - 1, Math.floor(i * N / secs.length))) : null,
+    }));
+    speakItems(items, { btn: play, onEnd: () => { if (deckApi) deckApi.setFs(false); } });
+  };
+  acts.appendChild(play);
+  if (deckApi){
+    const teach = document.createElement('button');
+    teach.className = 'abtn'; teach.textContent = '📽️ Teach the slides';
+    teach.onclick = () => { if (speakingNow) stopSpeak(); else deckApi.present(); };
+    acts.appendChild(teach);
+  }
+  extra.appendChild(acts);
+}
+
+/* ---- persistence: chats survive reloads and app updates ---- */
+const CHATS_LS = 'sft_chats_v1';
+function loadChats(){
+  try { return JSON.parse(localStorage.getItem(CHATS_LS)) || []; } catch(e){ return []; }
+}
+function saveChat(rec){
+  const all = loadChats();
+  all.push(rec);
+  while (all.length > 30) all.shift();
+  try { localStorage.setItem(CHATS_LS, JSON.stringify(all)); } catch(e){}
+}
+
 function ask(){
   const question = qEl.value.trim();
   if (!question || busy) return;
@@ -923,7 +951,7 @@ function ask(){
   const extra = bot.querySelector('.extra');
   document.getElementById('tstatus').textContent = '🤔 Thinking…';
 
-  let raw = '', gotFirst = false, lastRender = 0, slideNote = null;
+  let raw = '', gotFirst = false, lastRender = 0, slideNote = null, srcData = [];
   const render = (force) => {
     const now = Date.now();
     if (!force && now - lastRender < 250) return;
@@ -971,10 +999,8 @@ function ask(){
           if (!line.startsWith('data:')) continue;
           let j; try { j = JSON.parse(line.slice(5)); } catch(e){ continue; }
           if (j.sources){
-            if (j.sources.length){
-              srcBox.innerHTML = '<div class="sources">' + j.sources.map(s =>
-                '<span class="chip">📖 Class '+s.class+' '+esc(s.subject)+' — '+esc(s.chapter)+'</span>').join('') + '</div>';
-            }
+            srcData = j.sources;
+            if (j.sources.length) srcBox.innerHTML = sourceChips(j.sources);
           } else if (j.t){
             raw += j.t; gotFirst = true; render(false);
           } else if (j.error){
@@ -1002,38 +1028,43 @@ function ask(){
     history.push({ role:'user', content: question });
     history.push({ role:'assistant', content: explain.slice(0, 3000) });
     if (slideNote){ slideNote.remove(); slideNote = null; }
-    let deckApi = null;
-    if (si !== -1){
-      const slides = parseSlides(raw.slice(si + 8).replace(/\[END\][\s\S]*$/,''));
-      deckApi = renderDeck(extra, slides);
-    }
-    const acts = document.createElement('div');
-    acts.className = 'actions';
-    const play = document.createElement('button');
-    play.className = 'abtn primary'; play.textContent = '🔊 Play lesson';
-    play.onclick = () => {
-      if (speakingNow){ stopSpeak(); return; }
-      // full screen first, then speak the lesson section by section with
-      // the deck following the topic
-      if (deckApi) deckApi.setFs(true);
-      const secs = lessonSections(explain);
-      const N = deckApi ? deckApi.count : 0;
-      const items = secs.map((t, i) => ({
-        text: t,
-        onStart: N ? () => deckApi.show(Math.min(N - 1, Math.floor(i * N / secs.length))) : null,
-      }));
-      speakItems(items, { btn: play, onEnd: () => { if (deckApi) deckApi.setFs(false); } });
-    };
-    acts.appendChild(play);
-    if (deckApi){
-      const teach = document.createElement('button');
-      teach.className = 'abtn'; teach.textContent = '📽️ Teach the slides';
-      teach.onclick = () => { if (speakingNow) stopSpeak(); else deckApi.present(); };
-      acts.appendChild(teach);
-    }
-    extra.appendChild(acts);
+    const slides = si !== -1 ? parseSlides(raw.slice(si + 8).replace(/\[END\][\s\S]*$/,'')) : [];
+    wireAnswer(extra, explain, slides);
+    saveChat({ q: question, explain, slides, sources: srcData, ts: Date.now() });
     scrollDown();
   }
+}
+
+/* ============================ restore past chats ============================ */
+{
+  const past = loadChats();
+  for (const rec of past){
+    addUserMsg(rec.q);
+    const bot = document.createElement('div');
+    bot.className = 'msg bot';
+    bot.innerHTML = '<div class="who">S. SASTIKA</div><div class="srcbox"></div>' +
+      '<div class="body"></div><div class="extra"></div>';
+    if (rec.sources && rec.sources.length) bot.querySelector('.srcbox').innerHTML = sourceChips(rec.sources);
+    bot.querySelector('.body').innerHTML = md(rec.explain || '');
+    wireAnswer(bot.querySelector('.extra'), rec.explain || '', rec.slides || []);
+    feed.appendChild(bot);
+  }
+  for (const rec of past.slice(-3)){
+    history.push({ role:'user', content: rec.q });
+    history.push({ role:'assistant', content: (rec.explain || '').slice(0, 3000) });
+  }
+  if (past.length) scrollDown();
+}
+document.getElementById('clearChat').addEventListener('click', () => {
+  if (!confirm('Clear all saved chat history on this device?')) return;
+  localStorage.removeItem(CHATS_LS);
+  location.reload();
+});
+{
+  const sel = document.getElementById('classSel');
+  const saved = localStorage.getItem('sft_class');
+  if (saved !== null && sel.querySelector('option[value="' + saved + '"]')) sel.value = saved;
+  sel.addEventListener('change', () => localStorage.setItem('sft_class', sel.value));
 }
 
 /* ============================ status ============================ */
@@ -1049,7 +1080,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.11';
+      ' · IBI Skilled Foundations Teacher v1.12';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
