@@ -207,7 +207,7 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.10</span>
+  <span class="ver-badge" id="verBadge">v1.11</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
 </header>
@@ -398,11 +398,11 @@ function makePortrait(canvas){
 /* visemes: real mouths form SHAPES per sound, not just open/close.
    We know the text being spoken and how far playback has reached, so the
    lips round for O/U, widen for E/I, close for M/B/P and between words. */
-const VISEMES = {
-  open:   { rx:0.047, hK:0.030, teeth:1 },
-  wide:   { rx:0.058, hK:0.016, teeth:1 },
-  round:  { rx:0.030, hK:0.028, teeth:0 },
-  closed: { rx:0.044, hK:0.006, teeth:0 },
+const VISEMES = {   // tf = teeth height as a fraction of the mouth opening
+  open:   { rx:0.047, hK:0.030, teeth:1, tf:0.15 },
+  wide:   { rx:0.058, hK:0.016, teeth:1, tf:0.26 },
+  round:  { rx:0.030, hK:0.028, teeth:0, tf:0 },
+  closed: { rx:0.044, hK:0.006, teeth:0, tf:0 },
 };
 let speechText = '', speechFrac = -1;   // set by the speech players
 function visemeAt(text, frac){
@@ -418,7 +418,7 @@ function visemeAt(text, frac){
   }
   return 'open';
 }
-let mRx = VISEMES.open.rx, mH = 0, mTeeth = 1;   // smoothed mouth state
+let mRx = VISEMES.open.rx, mH = 0, mTeeth = 1, mTf = 0.15;   // smoothed mouth state
 let lastFrameAt = 0;
 function portraitFrame(t){
   requestAnimationFrame(portraitFrame);
@@ -457,6 +457,7 @@ function renderPortraits(t){
   mRx += (V.rx - mRx) * 0.35;
   mH  += (V.hK * Math.min(1, audioLevel * 1.4) - mH) * 0.45;
   mTeeth += (V.teeth - mTeeth) * 0.4;
+  mTf += (V.tf - mTf) * 0.4;
   const img = document.getElementById('teacherPhoto');
   if (!img || !img.naturalWidth) return;
   for (const c of portraits){
@@ -482,27 +483,22 @@ function renderPortraits(t){
       if (h > 1.2){
         ctx.save();
         ctx.filter = 'blur(1px)';
-        // natural mouth interior: warm cavity fading into a pink tongue
-        // at the bottom (a flat dark fill read as a black hole)
+        // warm mouth interior with just a hint of tongue at the bottom;
+        // the visible element is a small, clear row of upper teeth
         const grad = ctx.createLinearGradient(0, yT, 0, yT + h);
-        grad.addColorStop(0,    'rgba(88,33,35,0.95)');
-        grad.addColorStop(0.45, 'rgba(62,24,26,0.95)');
-        grad.addColorStop(0.72, 'rgba(152,74,80,0.95)');
-        grad.addColorStop(1,    'rgba(192,100,106,0.95)');
+        grad.addColorStop(0,    'rgba(84,31,33,0.94)');
+        grad.addColorStop(0.55, 'rgba(66,25,27,0.94)');
+        grad.addColorStop(1,    'rgba(140,72,76,0.94)');
         ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.ellipse(cx2, yT + h/2, rx, h/2, 0, 0, Math.PI*2);
         ctx.fill();
-        if (h > 5){                                   // tongue highlight
-          ctx.fillStyle = 'rgba(208,112,118,0.45)';
+        const tRy = Math.min(h * mTf, 5);
+        if (h > 4 && mTeeth > 0.4 && tRy > 0.8){
+          ctx.fillStyle = 'rgba(238,231,221,' + (0.9*mTeeth) + ')';
           ctx.beginPath();
-          ctx.ellipse(cx2, yT + h*0.80, rx*0.5, h*0.18, 0, 0, Math.PI*2);
-          ctx.fill();
-        }
-        if (h > 6 && mTeeth > 0.4){
-          ctx.fillStyle = 'rgba(222,212,202,' + (0.55*mTeeth) + ')';
-          ctx.beginPath();
-          ctx.ellipse(cx2, yT + h*0.18, rx*0.75, Math.min(h*0.16, 3.5), 0, 0, Math.PI*2);
+          if (ctx.roundRect) ctx.roundRect(cx2 - rx*0.75, yT + 1, rx*1.5, 2*tRy, tRy);
+          else ctx.ellipse(cx2, yT + 1 + tRy, rx*0.75, tRy, 0, 0, Math.PI*2);
           ctx.fill();
         }
         ctx.restore();
@@ -1053,7 +1049,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.10';
+      ' · IBI Skilled Foundations Teacher v1.11';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
