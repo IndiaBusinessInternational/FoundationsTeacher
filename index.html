@@ -53,11 +53,15 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
 @media(max-width:860px){
   .teacher-card{position:static;display:flex;align-items:center;gap:14px;text-align:left;padding:12px 14px}
   .teacher-card svg{width:96px;height:96px}
-  .teacher-card #teacherPhoto{width:96px;height:96px}
+  .teacher-card .avatar-wrap{flex:0 0 auto}
+  .teacher-card #teacherPhoto{width:96px}
   .teacher-card .tname{margin-top:0}
 }
 .teacher-card svg{width:210px;height:210px;max-width:100%}
-#teacherPhoto{display:none;width:210px;height:210px;max-width:100%;border-radius:50%;object-fit:cover;object-position:top;
+/* aspect-ratio + height:auto keep the photo a perfect circle even when a
+   narrow flex layout clamps its width (it rendered oval on phones otherwise) */
+#teacherPhoto{display:none;width:210px;max-width:100%;aspect-ratio:1/1;height:auto;border-radius:50%;
+              object-fit:cover;object-position:top;
               border:3px solid var(--gold);box-shadow:0 0 0 6px rgba(232,182,76,.15),0 8px 28px rgba(0,0,0,.35)}
 #teacherPhoto.ok{display:inline-block}
 .speaking #teacherPhoto{animation:photoNod 2.6s ease-in-out infinite;
@@ -179,7 +183,7 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.4</span>
+  <span class="ver-badge" id="verBadge">v1.5</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
 </header>
@@ -572,14 +576,17 @@ function renderDeck(container, slides){
     if (Math.abs(dx) > 45) userGo(cur + (dx < 0 ? 1 : -1));
   }, {passive:true});
 
-  /* presenter mode: S. Sastika reads each slide and the deck turns with her */
+  /* presenter mode: goes full screen, then S. Sastika reads each slide and
+     the deck turns with her; the screen is released when she finishes */
   const playbtn = deck.querySelector('.playbtn');
   function present(){
+    setFs(true);
     const items = slides.map((s, i) => ({
       text: s.title + '. ' + s.points.join('. ') + '.',
       onStart: () => show(i),
     }));
-    speakItems(items, { btn: playbtn, stopLabel: '⏹', rate: 0.95 });
+    speakItems(items, { btn: playbtn, stopLabel: '⏹', rate: 0.95,
+                        onEnd: () => setFs(false) });
   }
   function togglePresent(){
     if (speakingNow) stopSpeak();
@@ -589,7 +596,7 @@ function renderDeck(container, slides){
 
   show(0);
   container.appendChild(deck);
-  return { show, count: slides.length, present };
+  return { show, count: slides.length, present, setFs };
 }
 
 /* ============================ chat ============================ */
@@ -715,14 +722,16 @@ function ask(){
     play.className = 'abtn primary'; play.textContent = '🔊 Play lesson';
     play.onclick = () => {
       if (speakingNow){ stopSpeak(); return; }
-      // speak the lesson section by section; the deck follows the topic
+      // full screen first, then speak the lesson section by section with
+      // the deck following the topic
+      if (deckApi) deckApi.setFs(true);
       const secs = lessonSections(explain);
       const N = deckApi ? deckApi.count : 0;
       const items = secs.map((t, i) => ({
         text: t,
         onStart: N ? () => deckApi.show(Math.min(N - 1, Math.floor(i * N / secs.length))) : null,
       }));
-      speakItems(items, { btn: play });
+      speakItems(items, { btn: play, onEnd: () => { if (deckApi) deckApi.setFs(false); } });
     };
     acts.appendChild(play);
     if (deckApi){
@@ -749,7 +758,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.4';
+      ' · IBI Skilled Foundations Teacher v1.5';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
