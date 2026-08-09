@@ -184,9 +184,22 @@ textarea#q:focus{outline:2px solid var(--violet-2);border-color:transparent}
 button#send{flex:0 0 auto;width:46px;height:46px;border:0;border-radius:12px;cursor:pointer;font-size:18px;
             background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff}
 button#send:disabled{opacity:.4;cursor:default}
-button#mathToggle{flex:0 0 auto;width:46px;height:46px;border-radius:12px;cursor:pointer;font-size:16px;
+button#mathToggle,button#photoBtn,button#micBtn{flex:0 0 auto;width:46px;height:46px;border-radius:12px;cursor:pointer;font-size:16px;
             background:var(--card);color:var(--text-2);border:1px solid rgba(255,255,255,.14)}
-button#mathToggle.on{background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff;border-color:transparent}
+button#mathToggle.on,button#photoBtn.on{background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff;border-color:transparent}
+button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color:#fff;border-color:transparent;
+            animation:micpulse 1.2s ease-in-out infinite}
+@keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.45)}50%{box-shadow:0 0 0 9px rgba(244,63,94,0)}}
+.photo-preview{display:none;align-items:center;gap:10px;margin-top:8px;background:rgba(255,255,255,.05);
+            border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:8px 10px}
+.photo-preview.show{display:flex}
+.photo-preview img{width:56px;height:56px;object-fit:cover;border-radius:8px;flex:0 0 auto}
+.photo-preview .pp-note{font-size:12px;color:var(--text-2);flex:1}
+.photo-preview .pp-x{flex:0 0 auto;border:0;background:rgba(220,60,80,.25);color:#ffb4c0;border-radius:8px;
+            width:30px;height:30px;cursor:pointer;font-size:14px}
+.msg.user img.qphoto{display:block;max-width:180px;max-height:180px;border-radius:10px;margin-top:8px}
+.ocrline{font-size:12px;color:var(--text-2);background:rgba(232,182,76,.08);border:1px solid rgba(232,182,76,.25);
+            border-radius:9px;padding:7px 10px;margin:0 0 8px}
 .mathbar{display:none;flex-direction:column;gap:6px;margin-top:8px}
 .mathbar.open{display:flex}
 .mathrow{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
@@ -219,7 +232,7 @@ button#mathToggle.on{background:linear-gradient(135deg,var(--violet),var(--viole
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.13</span>
+  <span class="ver-badge" id="verBadge">v2.0</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
   <button class="engine-pill" id="clearChat" title="Clear saved chat history" style="cursor:pointer">🗑</button>
@@ -334,8 +347,16 @@ button#mathToggle.on{background:linear-gradient(135deg,var(--violet),var(--viole
           <option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
         </select>
         <textarea id="q" rows="1" placeholder="Ask your question… e.g. Why does the moon change shape?"></textarea>
+        <button id="micBtn" title="Ask by voice — speak your question">🎤</button>
+        <button id="photoBtn" title="Attach a photo of your question — textbook or notebook page">📷</button>
         <button id="mathToggle" title="Math symbols keyboard — type equations like cosec θ − sin θ = m">√ˣ</button>
         <button id="send" title="Ask">➤</button>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none">
+      <div class="photo-preview" id="photoPreview">
+        <img id="photoThumb" alt="your photo">
+        <div class="pp-note">Photo attached — I will read it when you press ➤.<br>You can also type extra instructions above.</div>
+        <button class="pp-x" id="photoRemove" title="Remove photo">✕</button>
       </div>
       <div class="mathbar" id="mathbar">
         <div class="mathrow" id="mathSyms"></div>
@@ -490,20 +511,10 @@ function renderPortraits(t){
     const sway = Math.sin(t/1300) * 0.012 + (speakingNow ? Math.sin(t/460) * 0.014 * (0.3+audioLevel) : 0);
     ctx.translate(S/2, S*0.62); ctx.rotate(sway); ctx.translate(-S/2, -S*0.62);
     ctx.drawImage(img, 0, 0, iw, ih, 0, 0, iw*s, ih*s);
-    const openF = Math.min(1, mH / 0.032);            // how far the jaw is open
-    if (openF > 0.02 || Math.abs(mW - 1) > 0.005){
-      // jaw drops: mouth-to-chin strip stretched downward (amplified —
-      // this and the lip warp below are the WHOLE animation, nothing drawn)
-      const sx = iw*MOUTH.x1, sw = iw*(MOUTH.x2-MOUTH.x1);
-      const sy = ih*MOUTH.lipY, sh = ih*(MOUTH.botY-MOUTH.lipY);
-      ctx.drawImage(img, sx, sy, sw, sh, sx*s, sy*s, sw*s, sh*s*(1 + 0.26*openF));
-      // her own lips move: the lip band widens for E/I, narrows and
-      // puckers for O/U, thickens as the jaw opens
-      const lx = iw*0.400, lw = iw*0.210;
-      const ly = ih*0.386, lh = ih*0.064;
-      const dw = lw*mW*s, dh = lh*(1 + 0.12*openF)*s;
-      ctx.drawImage(img, lx, ly, lw, lh, iw*MOUTH.cx*s - dw/2, ly*s, dw, dh);
-    }
+    // Mouth warping removed (user: "keep mouth movements proper or remove
+    // that" — after many iterations a warped still photo never looked
+    // right). She now shows presence through the gentle sway while
+    // speaking plus the card glow; her face stays exactly her photo.
     ctx.restore();
   }
 }
@@ -741,7 +752,41 @@ function stopSpeak(){
 
 /* ============================ markdown (tiny, safe) ============================ */
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* The teacher is told to write Unicode math, but models still slip into
+   LaTeX ($...$, \frac, \theta, ^{2}). Normalize every answer to the same
+   clean Unicode the question box produces, before markdown rendering. */
+const GREEK_TEX = { theta:'θ', Theta:'Θ', alpha:'α', beta:'β', gamma:'γ', delta:'δ', Delta:'Δ',
+  pi:'π', lambda:'λ', mu:'μ', sigma:'σ', Sigma:'Σ', phi:'φ', omega:'ω', Omega:'Ω', infty:'∞',
+  angle:'∠', therefore:'∴', because:'∵' };
+const SUB_CH = {'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋','n':'ₙ'};
+function supStr(g){ let o=''; for (const ch of g){ if (!SUP[ch]) return null; o += SUP[ch]; } return o; }
+function subStr(g){ let o=''; for (const ch of g){ if (!SUB_CH[ch]) return null; o += SUB_CH[ch]; } return o; }
+function mathifyAnswer(s){
+  if (!s || (s.indexOf('\\') === -1 && s.indexOf('$') === -1 && s.indexOf('^') === -1 && s.indexOf('_{') === -1)) return s;
+  return s
+    // strip math delimiters: $...$, $$...$$, \( \), \[ \]
+    .replace(/\$\$([\s\S]{1,400}?)\$\$/g, '$1')
+    .replace(/\$([^$\n]{1,300})\$/g, '$1')
+    .replace(/\\[()\[\]]/g, '')
+    // superscripts/subscripts FIRST: \frac{x^{2}}{a^{2}} has nested braces
+    // that only match once ^{2} has already collapsed to ²
+    .replace(/\^\{([^{}]+)\}/g, (m,g) => supStr(g) ?? '^('+g+')')
+    .replace(/_\{([^{}]+)\}/g, (m,g) => subStr(g) ?? '_'+g)
+    .replace(/\\(?:d|t)?frac\{([^{}]+)\}\{([^{}]+)\}/g,
+      (m,a,b) => (a.length===1 && b.length===1) ? a+'/'+b : '('+a+')/('+b+')')
+    .replace(/\\sqrt\{([^{}]+)\}/g, '√($1)')
+    .replace(/\\sqrt\s*/g, '√')
+    .replace(/\\(theta|Theta|alpha|beta|gamma|delta|Delta|pi|lambda|mu|sigma|Sigma|phi|omega|Omega|infty|angle|therefore|because)\b/g,
+      (m,g) => GREEK_TEX[g] || m)
+    .replace(/\\(sin|cos|tan|cot|sec|csc|cosec|arcsin|arccos|arctan|log|ln)\b/g, '$1')
+    .replace(/\\times\b/g,'×').replace(/\\div\b/g,'÷').replace(/\\cdot\b/g,'·').replace(/\\pm\b/g,'±')
+    .replace(/\\leq?\b/g,'≤').replace(/\\geq?\b/g,'≥').replace(/\\neq?\b/g,'≠').replace(/\\approx\b/g,'≈')
+    .replace(/\\circ\b/g,'°').replace(/\\degree\b/g,'°').replace(/\\left\b/g,'').replace(/\\right\b/g,'')
+    .replace(/\^([0-9n])(?![0-9a-zA-Z])/g, (m,g) => SUP[g] || m);
+}
+
 function md(src){
+  src = mathifyAnswer(src);
   src = esc(src);
   const codes = [];
   src = src.replace(/```([\s\S]*?)```/g, (m,c)=>{ codes.push(c.replace(/^\w*\n/,'')); return '\x01C'+(codes.length-1)+'\x01'; });
@@ -762,6 +807,7 @@ function md(src){
 
 /* ============================ slides ============================ */
 function parseSlides(text){
+  text = mathifyAnswer(text);
   const out = [];
   for (const line of text.split('\n')){
     // accept "Slide 1: ..." but also the bare "1: ..." the local model
@@ -939,6 +985,84 @@ function setMathbar(on){
 mathToggle.addEventListener('click', () => setMathbar(!mathbar.classList.contains('open')));
 try { if (localStorage.getItem('sft_math') === '1') setMathbar(true); } catch {}
 
+/* ---------------- voice questions: speak instead of typing ---------------- */
+{
+  const micBtn = document.getElementById('micBtn');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    micBtn.style.display = 'none';   // browser has no speech recognition
+  } else {
+    let rec = null, baseText = '';
+    const stopRec = () => { if (rec) { try { rec.stop(); } catch(e){} } };
+    micBtn.addEventListener('click', () => {
+      if (rec) { stopRec(); return; }
+      rec = new SR();
+      rec.lang = 'en-IN';
+      rec.interimResults = true;
+      rec.continuous = false;          // one question at a time, ends on silence
+      baseText = qEl.value ? qEl.value.replace(/\s+$/, '') + ' ' : '';
+      micBtn.classList.add('listening'); micBtn.textContent = '⏹';
+      document.getElementById('tstatus').textContent = '🎤 Listening… speak your question';
+      rec.onresult = (e) => {
+        let final = '', interim = '';
+        for (const r of e.results) (r.isFinal ? final += r[0].transcript : interim += r[0].transcript);
+        qEl.value = baseText + final + interim;
+        // the input pipeline turns spoken "theta"/"squared" style words into symbols
+        qEl.selectionStart = qEl.selectionEnd = qEl.value.length;
+        qEl.dispatchEvent(new Event('input', { bubbles: true }));
+        if (final) baseText = qEl.value.slice(0, baseText.length) + final + ' ';
+      };
+      rec.onerror = (e) => {
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed')
+          alert('Microphone permission is blocked. Allow the mic for this site and try again.');
+      };
+      rec.onend = () => {
+        rec = null;
+        micBtn.classList.remove('listening'); micBtn.textContent = '🎤';
+        document.getElementById('tstatus').textContent = 'Ask me anything from your textbooks!';
+        qEl.focus();
+      };
+      try { rec.start(); } catch(e) { rec = null; micBtn.classList.remove('listening'); micBtn.textContent = '🎤'; }
+    });
+  }
+}
+
+/* ---------------- photo questions: attach a picture of the doubt ---------------- */
+let pendingPhoto = '';        // downscaled JPEG data URL, sent with the next ask
+const photoInput = document.getElementById('photoInput');
+const photoPreview = document.getElementById('photoPreview');
+document.getElementById('photoBtn').addEventListener('click', () => photoInput.click());
+document.getElementById('photoRemove').addEventListener('click', clearPhoto);
+function clearPhoto(){
+  pendingPhoto = '';
+  photoInput.value = '';
+  photoPreview.classList.remove('show');
+  document.getElementById('photoBtn').classList.remove('on');
+}
+photoInput.addEventListener('change', () => {
+  const f = photoInput.files && photoInput.files[0];
+  if (!f) return;
+  const img = new Image();
+  img.onload = () => {
+    // downscale: big enough for the vision model to read print AND
+    // handwriting, small enough to upload from a phone on mobile data
+    const MAXD = 1400;
+    const k = Math.min(1, MAXD / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * k);
+    c.height = Math.round(img.naturalHeight * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    pendingPhoto = c.toDataURL('image/jpeg', 0.85);
+    URL.revokeObjectURL(img.src);
+    document.getElementById('photoThumb').src = pendingPhoto;
+    photoPreview.classList.add('show');
+    document.getElementById('photoBtn').classList.add('on');
+    qEl.focus();
+  };
+  img.onerror = () => { URL.revokeObjectURL(img.src); clearPhoto(); alert('Could not read that image file.'); };
+  img.src = URL.createObjectURL(f);
+});
+
 // Smart shortcuts while typing: ^2 → ², theta → θ, sqrt → √, <= → ≤ …
 // Only the text BEFORE the caret is rewritten, so the caret never jumps.
 const SUP = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','n':'ⁿ','+':'⁺','-':'⁻'};
@@ -979,16 +1103,22 @@ document.getElementById('hints').addEventListener('click', e => {
   if (e.target.classList.contains('hint')){ qEl.value = e.target.textContent; autoSize(); ask(); }
 });
 
-function addUserMsg(text){
+function addUserMsg(text, photoUrl){
   const m = document.createElement('div');
   m.className = 'msg user'; m.textContent = text;
+  if (photoUrl){
+    const im = document.createElement('img');
+    im.className = 'qphoto'; im.src = photoUrl; im.alt = 'attached photo';
+    m.appendChild(im);
+  }
   feed.appendChild(m);
 }
 function scrollDown(){ requestAnimationFrame(()=>window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'})); }
 
 function sourceChips(list){
   return '<div class="sources">' + list.map(s =>
-    '<span class="chip">📖 Class '+s.class+' '+esc(s.subject)+' — '+esc(s.chapter)+'</span>').join('') + '</div>';
+    '<span class="chip" title="'+esc(s.book || '')+'">📖 Class '+s.class+' '+esc(s.subject)+' — '+esc(s.chapter)+
+    (s.page ? ' · p.'+esc(String(s.page)) : '')+'</span>').join('') + '</div>';
 }
 
 /* an answer's interactive parts (deck + play buttons) — used for live
@@ -1035,11 +1165,25 @@ function saveChat(rec){
 
 function ask(){
   const question = qEl.value.trim();
-  if (!question || busy) return;
+  const photo = pendingPhoto;
+  if ((!question && !photo) || busy) return;
   busy = true; sendBtn.disabled = true;
   stopSpeak();
   qEl.value = ''; autoSize();
-  addUserMsg(question);
+  // small thumbnail for the chat log (full photo only goes to the server)
+  let photoThumbSmall = '';
+  if (photo){
+    try {
+      const im = document.getElementById('photoThumb');
+      const c = document.createElement('canvas');
+      const k = Math.min(1, 200 / Math.max(im.naturalWidth, im.naturalHeight));
+      c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      photoThumbSmall = c.toDataURL('image/jpeg', 0.7);
+    } catch(e){ photoThumbSmall = ''; }
+  }
+  addUserMsg(question || '📷 (photo question)', photoThumbSmall);
+  clearPhoto();
 
   const bot = document.createElement('div');
   bot.className = 'msg bot';
@@ -1052,7 +1196,7 @@ function ask(){
   const extra = bot.querySelector('.extra');
   document.getElementById('tstatus').textContent = '🤔 Thinking…';
 
-  let raw = '', gotFirst = false, lastRender = 0, slideNote = null, srcData = [];
+  let raw = '', gotFirst = false, lastRender = 0, slideNote = null, srcData = [], ocrText = '';
   const render = (force) => {
     const now = Date.now();
     if (!force && now - lastRender < 250) return;
@@ -1083,7 +1227,8 @@ function ask(){
   fetch('/api/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, class: +document.getElementById('classSel').value, history: history.slice(-6) }),
+    body: JSON.stringify({ question, image: photo || undefined,
+      class: +document.getElementById('classSel').value, history: history.slice(-6) }),
   }).then(async resp => {
     if (!resp.ok || !resp.body) throw new Error('HTTP ' + resp.status);
     const reader = resp.body.getReader();
@@ -1099,7 +1244,18 @@ function ask(){
         for (const line of frame.split('\n')){
           if (!line.startsWith('data:')) continue;
           let j; try { j = JSON.parse(line.slice(5)); } catch(e){ continue; }
-          if (j.sources){
+          if (j.status === 'reading_photo'){
+            document.getElementById('tstatus').textContent = '📷 Reading your photo…';
+            bodyEl.innerHTML = '<span class="typing"><i></i><i></i><i></i></span> 📷 Reading your photo…';
+          } else if (j.ocr){
+            ocrText = j.ocr;
+            const line = document.createElement('div');
+            line.className = 'ocrline';
+            line.textContent = '📷 I read from your photo: ' +
+              (j.ocr.length > 260 ? j.ocr.slice(0, 257) + '…' : j.ocr);
+            srcBox.parentNode.insertBefore(line, srcBox.nextSibling);
+            document.getElementById('tstatus').textContent = '🤔 Thinking…';
+          } else if (j.sources){
             srcData = j.sources;
             if (j.sources.length) srcBox.innerHTML = sourceChips(j.sources);
           } else if (j.t){
@@ -1126,12 +1282,13 @@ function ask(){
     if (ei !== -1) explain = si !== -1 ? raw.slice(ei+9, si) : raw.slice(ei+9);
     else if (si !== -1) explain = raw.slice(0, si);
     explain = explain.replace(/\[END\]\s*$/,'').trim();
-    history.push({ role:'user', content: question });
+    history.push({ role:'user', content: question || ('My photo said: ' + ocrText.slice(0, 600)) });
     history.push({ role:'assistant', content: explain.slice(0, 3000) });
     if (slideNote){ slideNote.remove(); slideNote = null; }
     const slides = si !== -1 ? parseSlides(raw.slice(si + 8).replace(/\[END\][\s\S]*$/,'')) : [];
     wireAnswer(extra, explain, slides);
-    saveChat({ q: question, explain, slides, sources: srcData, ts: Date.now() });
+    saveChat({ q: question || '📷 (photo question)', photo: photoThumbSmall,
+      ocr: ocrText.slice(0, 1000), explain, slides, sources: srcData, ts: Date.now() });
     scrollDown();
   }
 }
@@ -1140,11 +1297,17 @@ function ask(){
 {
   const past = loadChats();
   for (const rec of past){
-    addUserMsg(rec.q);
+    addUserMsg(rec.q, rec.photo || '');
     const bot = document.createElement('div');
     bot.className = 'msg bot';
     bot.innerHTML = '<div class="who">S. SASTIKA</div><div class="srcbox"></div>' +
       '<div class="body"></div><div class="extra"></div>';
+    if (rec.ocr){
+      const line = document.createElement('div');
+      line.className = 'ocrline';
+      line.textContent = '📷 I read from your photo: ' + (rec.ocr.length > 260 ? rec.ocr.slice(0, 257) + '…' : rec.ocr);
+      bot.insertBefore(line, bot.querySelector('.body'));
+    }
     if (rec.sources && rec.sources.length) bot.querySelector('.srcbox').innerHTML = sourceChips(rec.sources);
     bot.querySelector('.body').innerHTML = md(rec.explain || '');
     wireAnswer(bot.querySelector('.extra'), rec.explain || '', rec.slides || []);
@@ -1181,7 +1344,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.13';
+      ' · IBI Skilled Foundations Teacher v2.0';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
