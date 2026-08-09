@@ -15,9 +15,11 @@ simply, with an animated video lesson and a spoken lesson. Meet **Sastika Miss**
   Studies — History, Geography, Economics, Political Science; Commerce, Accountancy and
   more) are downloaded class-wise on the laptop, text-extracted and indexed. Every answer
   retrieves the most relevant textbook passages first and cites them.
-- **Two engines.** Out of the box answers come from the on-device IBI Local engine
-  (nothing leaves the laptop, no API cost). Adding a cloud API key in
-  `Backend\config.json` switches to the faster cloud engine automatically.
+- **Five engines.** Out of the box answers come from the on-device IBI Local engine
+  (nothing leaves the laptop, no API cost). The ⚙ engine settings in the app accept a
+  DeepSeek, Gemini, ChatGPT or Claude API key — any key upgrades the teacher's answers
+  and animated lessons automatically. Keys are stored only in `Backend\config.json`
+  on the laptop and are never sent back to the browser or published.
 - **Answers teach, not just tell.** Each reply is a simple spoken-style explanation plus
   an **animated video lesson, generated live**: the teacher scripts scenes (fractions,
   number lines, bar and pie charts, process flows, life cycles, labelled diagrams,

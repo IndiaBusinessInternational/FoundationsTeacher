@@ -198,7 +198,7 @@ select#classSel{background:var(--card);color:var(--text);border:1px solid rgba(2
                 padding:11px 8px;font-size:13px;flex:0 0 auto;max-width:118px}
 textarea#q{flex:1;resize:none;background:var(--card);color:var(--text);border:1px solid rgba(255,255,255,.14);
            border-radius:11px;padding:12px 14px;font-size:14.5px;font-family:inherit;line-height:1.5;
-           min-height:46px;max-height:180px;overflow-y:auto}
+           min-height:46px;max-height:300px;overflow-y:hidden}
 textarea#q:focus{outline:2px solid var(--violet-2);border-color:transparent}
 button#send{flex:0 0 auto;width:46px;height:46px;border:0;border-radius:12px;cursor:pointer;font-size:18px;
             background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff}
@@ -243,6 +243,28 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
 .hint:hover{background:rgba(127,0,255,.25)}
 .statusline{font-size:10.5px;color:var(--text-3);margin-top:8px;text-align:center}
 
+/* ---------------- engine settings (⚙) ---------------- */
+.emodal{position:fixed;inset:0;z-index:2000;background:rgba(10,8,24,.72);display:flex;
+        align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+.emodal[hidden]{display:none}
+.ecard{background:linear-gradient(180deg,var(--card),var(--card-2));border:1px solid rgba(255,255,255,.12);
+       border-radius:16px;max-width:540px;width:100%;padding:18px 20px;max-height:88vh;overflow-y:auto}
+.ecard h2{margin:0 0 4px;font-size:16px;color:var(--gold)}
+.ecard .esub{font-size:12px;color:var(--text-3);margin:0 0 12px;line-height:1.55}
+.ecard label{font-size:11.5px;color:var(--text-2);display:block;margin:10px 0 3px}
+.ecard select{width:100%;background:var(--card);color:var(--text);border:1px solid rgba(255,255,255,.16);
+       border-radius:9px;padding:9px;font-size:13px}
+.erow{display:flex;align-items:center;gap:8px;margin:8px 0}
+.erow .ename{flex:0 0 84px;font-size:13px;color:var(--text)}
+.erow .edot{flex:0 0 auto;font-size:10px;padding:2px 8px;border-radius:10px;
+       background:rgba(255,255,255,.07);color:var(--text-3);white-space:nowrap}
+.erow .edot.on{background:rgba(52,211,153,.16);color:var(--green)}
+.erow input{flex:1;min-width:0;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.14);
+       border-radius:8px;color:var(--text);padding:8px 9px;font-size:12px}
+.erow .eclear{flex:0 0 auto;font-size:11px;color:var(--red);background:none;border:0;
+       cursor:pointer;text-decoration:underline;padding:0}
+.ebtns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+
 /* welcome */
 .welcome{background:linear-gradient(150deg,rgba(127,0,255,.14),rgba(232,182,76,.07));border:1px solid rgba(168,85,247,.25);
          border-radius:var(--radius);padding:18px 20px}
@@ -260,11 +282,37 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v3.1</span>
+  <span class="ver-badge" id="verBadge">v4.0</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
+  <button class="engine-pill" id="engineCfg" title="AI engine settings — add a DeepSeek, Gemini, ChatGPT or Claude key" style="cursor:pointer">⚙</button>
   <button class="engine-pill" id="clearChat" title="Clear saved chat history" style="cursor:pointer">🗑</button>
 </header>
+
+<!-- engine settings: pick the teacher's brain; keys are saved ONLY on the
+     laptop (Backend\config.json) and are never shown back or published -->
+<div class="emodal" id="engineModal" hidden>
+  <div class="ecard">
+    <h2>⚙ AI engine</h2>
+    <p class="esub">The teacher answers with the engine below. A cloud key gives much better
+      answers and animated lessons; keys are stored only on the laptop and never leave it.</p>
+    <label for="engineSel">Engine</label>
+    <select id="engineSel">
+      <option value="auto">Auto — best available (cloud if any key is set)</option>
+      <option value="local">IBI Local — on-device, no key needed</option>
+      <option value="deepseek">DeepSeek</option>
+      <option value="gemini">Gemini</option>
+      <option value="openai">ChatGPT</option>
+      <option value="anthropic">Claude</option>
+    </select>
+    <label>API keys (paste to set — leave blank to keep the saved one)</label>
+    <div id="engineRows"></div>
+    <div class="ebtns">
+      <button class="abtn" id="engineCancel">Cancel</button>
+      <button class="abtn primary" id="engineSave">Save</button>
+    </div>
+  </div>
+</div>
 
 <main>
   <div class="teacher-col">
@@ -1060,6 +1108,10 @@ const PARROTS = [
   [/^timeline\s+1857/i,        /1857|1885|1947|independence|freedom|congress|british|revolt/i],
   [/^equation\s+sin/i,         /sin|cos|trigonometr|identity|angle|θ/i],
 ];
+/* labels the model writes when it is echoing a pattern instead of drawing
+   real content ("pie name=100, stone=1" — seen live on a forces question) */
+const PLACEHOLDER_WORDS = new Set(['name','label','item','thing','value','number','part','parts',
+  'first','next','last','stage','event','object','example','option','data','total','amount','abc']);
 function visualIsRelevant(sc){
   const v = sc.visual;
   if (!v || v.type === 'text') return true;
@@ -1073,6 +1125,21 @@ function visualIsRelevant(sc){
            ctx.includes(v.n + '/' + v.d);
   if (v.type === 'numberline')
     return /number|integer|count|position|between|value|scale|point/.test(ctx);
+  // label-bearing visuals: the labels must be REAL words that the scene
+  // itself talks about — otherwise the model invented the drawing
+  if (v.items || v.center){
+    const words = [];
+    const push = s => { for (const w of String(s).toLowerCase().split(/[^a-z0-9]+/)) if (w) words.push(w); };
+    if (v.items) for (const it of v.items)
+      push(it.label !== undefined ? it.label : (it.when !== undefined ? it.when + ' ' + it.what : it));
+    if (v.center) push(v.center);
+    const real = words.filter(w => w.length > 2 && !PLACEHOLDER_WORDS.has(w) && !/^\d+$/.test(w));
+    if (!real.length) return false;                      // labels are all junk
+    // a data chart with even ONE placeholder slice is invented data
+    if ((v.type === 'bars' || v.type === 'pie') && words.some(w => PLACEHOLDER_WORDS.has(w))) return false;
+    // at least one label (4-letter stem match) must appear in the scene text
+    if (!real.some(w => ctx.includes(w.slice(0, Math.min(w.length, 4))))) return false;
+  }
   return true;
 }
 function titleForVisual(v){
@@ -1187,6 +1254,35 @@ function slidesToScenes(slides){
   return (slides || []).map(sl => ({ title:sl.title, emoji:sl.emoji || '📘',
     points:sl.points || [], visual:{ type:'text', emoji:sl.emoji || '📘' }, say:'' }));
 }
+
+/* Every answer gets an animated lesson: if the [SCENES] block was missing or
+   unusable, build narrated text-card scenes from the explanation itself. */
+const FALLBACK_EMOJI = ['📘','💡','🌟','✏️','🎓','🔍','🧠','⭐'];
+function scenesFromExplain(explain){
+  if (!explain || !explain.trim()) return [];
+  const secs = explain.split(/\n(?=#{2,4}\s)/).map(s=>s.trim()).filter(Boolean);
+  let parts;
+  if (secs.length >= 2){
+    parts = secs.map(s => {
+      const m = /^#{2,4}\s*(.+)$/m.exec(s);
+      return {
+        title: m ? mathifyAnswer(m[1]).replace(/[#*`]/g,'').trim() : 'Lesson',
+        body: cleanForSpeech(m ? s.replace(/^#{2,4}\s*.+$/m, '') : s),
+      };
+    }).filter(p => p.body);
+  } else {
+    const groups = speechGroups(cleanForSpeech(explain));
+    const per = Math.max(1, Math.ceil(groups.length / 6));
+    parts = [];
+    for (let i = 0; i < groups.length; i += per)
+      parts.push({ title: 'Part ' + (parts.length + 1), body: groups.slice(i, i + per).join(' ') });
+  }
+  return parts.slice(0, 8).map((p, i) => ({
+    title: p.title, emoji: FALLBACK_EMOJI[i % FALLBACK_EMOJI.length],
+    visual: { type: 'text', emoji: FALLBACK_EMOJI[i % FALLBACK_EMOJI.length] },
+    say: p.body.slice(0, 700), points: [],
+  }));
+}
 function renderScenes(container, scenes){
   if (!scenes.length) return;
   const deck = document.createElement('div');
@@ -1289,9 +1385,13 @@ const sendBtn = document.getElementById('send');
 const history = [];
 let busy = false;
 
+// the question box grows with its content (up to 300px, then scrolls) —
+// no scrollbar is shown while everything fits
 function autoSize(){
   qEl.style.height = 'auto';
-  qEl.style.height = Math.min(qEl.scrollHeight, 180) + 'px';
+  const max = 300;
+  qEl.style.height = Math.min(qEl.scrollHeight, max) + 'px';
+  qEl.style.overflowY = qEl.scrollHeight > max ? 'auto' : 'hidden';
 }
 autoSize();
 
@@ -1485,6 +1585,8 @@ function sourceChips(list){
 /* an answer's interactive parts (deck + play buttons) — used for live
    answers AND for chats restored from storage */
 function wireAnswer(extra, explain, scenes){
+  // an answer must never arrive without its animated lesson
+  if ((!scenes || !scenes.length) && explain) scenes = scenesFromExplain(explain);
   let deckApi = null;
   if (scenes && scenes.length) deckApi = renderScenes(extra, scenes);
   const acts = document.createElement('div');
@@ -1757,6 +1859,60 @@ document.getElementById('clearChat').addEventListener('click', () => {
   sel.addEventListener('change', () => localStorage.setItem('sft_class', sel.value));
 }
 
+/* ==================== engine settings (⚙) ==================== */
+{
+  const ENGINE_LIST = [['deepseek','DeepSeek'],['gemini','Gemini'],['openai','ChatGPT'],['anthropic','Claude']];
+  const modal = document.getElementById('engineModal');
+  const rows = document.getElementById('engineRows');
+  const sel = document.getElementById('engineSel');
+  const clearing = {};                 // provider -> user chose "remove key"
+  function buildRows(cfg){
+    rows.innerHTML = '';
+    for (const [id, label] of ENGINE_LIST){
+      const on = cfg.configured[id] && !clearing[id];
+      const row = document.createElement('div');
+      row.className = 'erow';
+      row.innerHTML = '<span class="ename">' + label + '</span>' +
+        '<span class="edot' + (on ? ' on' : '') + '">' + (on ? 'key saved ✓' : clearing[id] ? 'will remove' : 'no key') + '</span>' +
+        '<input type="password" autocomplete="off" data-eng="' + id + '" placeholder="paste ' + label + ' API key">' +
+        (cfg.configured[id] ? '<button class="eclear" data-clr="' + id + '">' + (clearing[id] ? 'undo' : 'remove') + '</button>' : '');
+      rows.appendChild(row);
+    }
+  }
+  let lastCfg = null;
+  function openModal(){
+    fetch('/api/engine-config').then(r=>r.json()).then(cfg => {
+      lastCfg = cfg;
+      for (const k in clearing) delete clearing[k];
+      sel.value = cfg.engine || 'auto';
+      buildRows(cfg);
+      modal.hidden = false;
+    }).catch(()=>alert('Could not load engine settings — is the teacher server reachable?'));
+  }
+  rows.addEventListener('click', e => {
+    const b = e.target.closest('.eclear');
+    if (!b) return;
+    const id = b.dataset.clr;
+    clearing[id] = !clearing[id];
+    buildRows(lastCfg);
+  });
+  document.getElementById('engineCfg').addEventListener('click', openModal);
+  document.getElementById('engineCancel').addEventListener('click', () => { modal.hidden = true; });
+  modal.addEventListener('click', e => { if (e.target === modal) modal.hidden = true; });
+  document.getElementById('engineSave').addEventListener('click', () => {
+    const keys = {};
+    rows.querySelectorAll('input[data-eng]').forEach(inp => {
+      if (inp.value.trim()) keys[inp.dataset.eng] = inp.value.trim();
+    });
+    for (const id in clearing) if (clearing[id] && !keys[id]) keys[id] = '';
+    fetch('/api/engine-config', { method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ engine: sel.value, keys }) })
+      .then(r => r.json())
+      .then(() => { modal.hidden = true; refreshStatus(); })
+      .catch(() => alert('Could not save — is the teacher server reachable?'));
+  });
+}
+
 /* ============================ status ============================ */
 function refreshStatus(){
   fetch('/api/status').then(r=>r.json()).then(s => {
@@ -1764,13 +1920,13 @@ function refreshStatus(){
     const cloud = s.engine === 'cloud';
     const up = cloud || s.localEngineUp;
     pill.classList.toggle('off', !up);
-    pill.innerHTML = (cloud ? 'Engine: <b>IBI Cloud</b>' :
-      'Engine: <b>' + (s.localEngineUp ? 'IBI Local ✓' : 'IBI Local — offline') + '</b>');
+    pill.innerHTML = 'Engine: <b>' + (cloud ? esc(s.engineName || 'IBI Cloud') + ' ✓' :
+      (s.localEngineUp ? 'IBI Local ✓' : 'IBI Local — offline')) + '</b>';
     const line = document.getElementById('statusline');
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v3.1';
+      ' · IBI Skilled Foundations Teacher v4.0';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
