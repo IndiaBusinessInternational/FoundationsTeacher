@@ -78,6 +78,9 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
               background:rgba(0,0,0,.55);border-radius:10px;padding:8px 14px;font-size:clamp(13px,2.2vw,19px);
               line-height:1.5;color:#fff;text-align:center;max-height:5em;overflow:hidden}
 .deck.fs .fs-subtitle:empty{display:none}
+/* while subtitles are showing, reserve room so the slide's points never
+   sit underneath the caption box */
+.deck.fs:has(.fs-subtitle:not(:empty)) .slide{padding-bottom:calc(160px + env(safe-area-inset-bottom))}
 @media(max-width:700px){ .deck.fs .fs-teacher{bottom:auto;top:56px;right:12px;width:22vmin} }
 .tname{font-size:16px;font-weight:700;margin-top:10px;color:var(--gold)}
 .trole{font-size:12px;color:var(--text-2);margin-top:3px;line-height:1.5}
@@ -257,7 +260,7 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v3.0</span>
+  <span class="ver-badge" id="verBadge">v3.1</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
   <button class="engine-pill" id="clearChat" title="Clear saved chat history" style="cursor:pointer">🗑</button>
@@ -990,6 +993,11 @@ const VISUALS = {
 };
 
 function parseVisual(spec){
+  const v = parseVisualInner(spec);
+  if (v) v.spec = String(spec).trim();   // kept for the relevance guard below
+  return v;
+}
+function parseVisualInner(spec){
   spec = mathifyAnswer(String(spec)).trim();
   let m;
   if ((m = /^fraction\s+(\d{1,2})\s*[\/⁄]\s*(\d{1,2})/i.exec(spec))){
@@ -1027,11 +1035,46 @@ function parseVisual(spec){
     if (items.length >= 2) return { type:'timeline', items };
   }
   if ((m = /^(?:equation|formula)\s+(.+)/i.exec(spec))) return { type:'equation', text:m[1].trim() };
-  if ((m = /^text\b\s*(\S*)/i.exec(spec)))
-    return { type:'text', emoji: (m[1] && /\p{Extended_Pictographic}/u.test(m[1])) ? m[1] : '📘' };
+  if ((m = /^text\b\s*(.*)$/i.exec(spec))){
+    const rest = m[1].trim();
+    // 'text "box on floor" -> "pushing force"' — a small model drawing a
+    // flow inside a text card; honour the intent and draw it as steps
+    const flow = rest.split(/->|→|⇒|=>/).map(s=>s.replace(/["“”']/g,'').trim()).filter(Boolean);
+    if (flow.length >= 2) return { type:'steps', items: flow.slice(0,6) };
+    const em = (rest.match(/\p{Extended_Pictographic}/u) || [])[0];
+    return { type:'text', emoji: em || '📘' };
+  }
   return null;   // unknown visual -> the scene falls back to a text card
 }
 
+/* qwen3:4b sometimes COPIES a sample visual instead of drawing the actual
+   topic ("fraction 3/4" on a friction question — seen live). A visual whose
+   idea never appears in the scene's own words is demoted to a text card:
+   a wrong picture is worse than no picture. */
+const PARROTS = [
+  [/^bars\s+rice\s*=/i,        /rice|wheat|maize|crop|produc|grain/i],
+  [/^pie\s+land\s*=/i,         /land|water|earth|surface|ocean/i],
+  [/^steps\s+evaporation/i,    /evaporat|condens|rain|water|cloud/i],
+  [/^cycle\s+egg\b/i,          /egg|larva|pupa|butterfly|insect|life\s*cycle/i],
+  [/^parts\s+flower/i,         /flower|petal|sepal|stamen|pistil|plant/i],
+  [/^timeline\s+1857/i,        /1857|1885|1947|independence|freedom|congress|british|revolt/i],
+  [/^equation\s+sin/i,         /sin|cos|trigonometr|identity|angle|θ/i],
+];
+function visualIsRelevant(sc){
+  const v = sc.visual;
+  if (!v || v.type === 'text') return true;
+  const ctx = (sc.title + ' ' + sc.say + ' ' + sc.points.join(' ')).toLowerCase();
+  for (const [re, kw] of PARROTS)
+    if (re.test(v.spec || '')) return kw.test(ctx);
+  // the two pure-number visuals carry no topic words of their own, so the
+  // scene text must show the topic really is about them
+  if (v.type === 'fraction')
+    return /fraction|part|whole|half|third|quarter|fourth|share|divid|out of|piece/.test(ctx) ||
+           ctx.includes(v.n + '/' + v.d);
+  if (v.type === 'numberline')
+    return /number|integer|count|position|between|value|scale|point/.test(ctx);
+  return true;
+}
 function titleForVisual(v){
   switch (v.type){
     case 'fraction':   return 'The fraction ' + v.n + '/' + v.d;
@@ -1087,8 +1130,17 @@ function parseScenes(text){
       const tv = parseVisual(sc.title);
       if (tv && tv.type !== 'text'){ sc.visual = tv; sc.title = titleForVisual(tv); }
     }
+    // a title that is just an echoed prompt pattern ('"parts OBJECT: PART,
+    // PART"', '"bars name=12, name=34"') is replaced with a friendly one;
+    // an echoed "Scene N:" prefix inside the title is stripped
+    sc.title = sc.title.replace(/^["“”']+|["“”']+$/g,'')
+                       .replace(/^scene\s*\d+\s*[:.-]\s*/i,'').trim();
+    if (/\b(?:OBJECT|PART|NAME|NUMBER|FIRST|NEXT|LAST|STAGE|YEAR|EVENT|TOP|BOTTOM|START|END|EMOJI|FORMULA)\b/.test(sc.title) ||
+        (/^(?:steps|cycle|parts|bars|pie|fraction|number\s*line|timeline|equation|text)\b/i.test(sc.title) && /->|=|:/.test(sc.title)))
+      sc.title = '';
     if (!sc.title) sc.title = sc.visual ? titleForVisual(sc.visual) : 'Lesson';
     if (!sc.say && !sc.points.length && !sc.visual) continue;   // an empty line, not a scene
+    if (!visualIsRelevant(sc)) sc.visual = { type:'text', emoji: sc.emoji };
     sc.points = sc.points.slice(0,5);
     out.push(sc);
   }
@@ -1718,7 +1770,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v3.0';
+      ' · IBI Skilled Foundations Teacher v3.1';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
