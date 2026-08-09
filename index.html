@@ -125,6 +125,22 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
 .slidenote b{color:#fff}
 .slidenote .typing i{background:var(--gold)}
 
+/* ---------------- animated lesson (scenes) ---------------- */
+/* Each scene is an SVG picture that draws itself: lines trace in, bars grow,
+   labels pop — the CSS animations restart every time a scene is (re)shown
+   because show() rebuilds the DOM. */
+.stage{display:block;width:100%;max-width:720px;height:auto;margin:6px auto 0}
+.deck.fs .stage{max-height:56vh;max-width:min(92vw,1000px)}
+.stage text{font-family:'Segoe UI',system-ui,sans-serif}
+.an-pop{opacity:0;animation:svgpop .55s ease forwards}
+@keyframes svgpop{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.an-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:svgdraw .9s ease forwards}
+@keyframes svgdraw{to{stroke-dashoffset:0}}
+.an-grow{transform:scaleY(0);transform-box:fill-box;transform-origin:bottom;animation:svggrow .8s ease forwards}
+@keyframes svggrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.an-spin{transform-box:fill-box;transform-origin:center;animation:svgspin .7s ease forwards;opacity:0}
+@keyframes svgspin{from{opacity:0;transform:scale(.4) rotate(-40deg)}to{opacity:1;transform:none}}
+
 /* ---------------- slides ---------------- */
 .deck{margin-top:12px;background:linear-gradient(160deg,#1a1339,#241a4f);border:1px solid rgba(232,182,76,.25);
       border-radius:14px;overflow:hidden}
@@ -241,7 +257,7 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v2.2</span>
+  <span class="ver-badge" id="verBadge">v3.0</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
   <button class="engine-pill" id="clearChat" title="Clear saved chat history" style="cursor:pointer">🗑</button>
@@ -342,7 +358,7 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
       <div class="welcome">
         <h2>Vanakkam! I'm S. Sastika 🙏</h2>
         <p>I have studied all the <b>NCERT textbooks from Class 1 to Class 12</b> — English, Mathematics, Science (Physics, Chemistry, Biology), Social Studies (History, Geography, Economics, Political Science), Commerce, Accountancy and more.</p>
-        <p>Ask me any question. I will explain it in very simple words, show you <b>lesson slides</b>, and I can even <b>speak the lesson aloud</b> 🔊. Choose your class below so I pick the right book.</p>
+        <p>Ask me any question. I will explain it in very simple words and teach it as an <b>animated video lesson</b> 🎬 — pictures that draw themselves while I <b>speak the lesson aloud</b> 🔊. Choose your class below so I pick the right book.</p>
       </div>
     </div>
 
@@ -814,13 +830,258 @@ function md(src){
   return src;
 }
 
-/* ============================ slides ============================ */
+/* ============================ animated lesson (scenes) ============================ */
+/* The teacher replies with [SCENES]: each scene is a title, a "visual" from a
+   small fixed vocabulary, a "say" narration and a few points. The visuals are
+   drawn here as SVG that animates itself (CSS classes an-pop/an-draw/an-grow),
+   so every answer becomes an animated video lesson generated live — no video
+   files, no render time, works for any concept. */
+const SCENE_COLORS = ['#e8b64c','#a855f7','#34d399','#60a5fa','#f87171','#f0abfc','#fbbf24','#2dd4bf'];
+const SVG_DEFS = '<defs><marker id="sfArr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#e8b64c"/></marker></defs>';
+
+// word-wrap into at most 2 tspan lines; longer text is ellipsised so a wordy
+// label can never overflow its box
+function wrapText(s, max){
+  s = String(s).trim();
+  if (s.length <= max) return [s];
+  const words = s.split(/\s+/), lines = [''];
+  for (const w of words){
+    const cur = lines[lines.length-1];
+    if (cur && (cur + ' ' + w).length > max){
+      if (lines.length === 2){ lines[1] = lines[1].slice(0, max-1) + '…'; return lines; }
+      lines.push(w.length > max ? w.slice(0, max-1) + '…' : w);
+    } else lines[lines.length-1] = cur ? cur + ' ' + w : w;
+  }
+  return lines;
+}
+function svgT(x, y, str, o){
+  o = o || {};
+  const size = o.size || 20, lines = wrapText(mathifyAnswer(String(str)), o.max || 16);
+  const lh = size * 1.2, y0 = y - (lines.length - 1) * lh / 2;
+  let t = '<text x="'+x+'" y="'+y0+'" text-anchor="'+(o.anchor||'middle')+'" font-size="'+size+'"' +
+    (o.weight ? ' font-weight="'+o.weight+'"' : '') +
+    ' fill="'+(o.fill||'#efeaff')+'" class="an-pop" style="animation-delay:'+(o.d||0)+'s">';
+  lines.forEach((ln,i)=>{ t += '<tspan x="'+x+'" dy="'+(i ? lh : 0)+'">'+esc(ln)+'</tspan>'; });
+  return t + '</text>';
+}
+function arcPath(cx, cy, r, a0, a1){
+  a1 = Math.min(a1, a0 + Math.PI*2*0.9999);
+  const large = (a1 - a0) > Math.PI ? 1 : 0;
+  return 'M'+cx+' '+cy+' L'+(cx+r*Math.cos(a0)).toFixed(1)+' '+(cy+r*Math.sin(a0)).toFixed(1)+
+    ' A'+r+' '+r+' 0 '+large+' 1 '+(cx+r*Math.cos(a1)).toFixed(1)+' '+(cy+r*Math.sin(a1)).toFixed(1)+' Z';
+}
+
+const VISUALS = {
+  fraction(v){
+    const cx=330, cy=185, r=132, step=Math.PI*2/v.d;
+    let s = '';
+    for (let i=0;i<v.d;i++){
+      const a0 = -Math.PI/2 + i*step, shaded = i < v.n;
+      s += '<path d="'+arcPath(cx,cy,r,a0,a0+step)+'" fill="'+(shaded?'rgba(232,182,76,.88)':'rgba(255,255,255,.07)')+
+        '" stroke="#14102a" stroke-width="3" class="an-pop" style="animation-delay:'+(shaded ? (0.5+i*0.25) : 0.1)+'s"/>';
+    }
+    s += svgT(605, 160, v.n + '/' + v.d, { size:64, fill:'#e8b64c', weight:700, d:0.3 });
+    s += svgT(605, 235, v.n + ' out of ' + v.d + ' equal parts', { size:19, fill:'#c4b8e8', max:18, d:0.6+v.n*0.25 });
+    return s;
+  },
+  numberline(v){
+    const x0=60, x1=740, y=190, span = v.b - v.a;
+    if (!(span > 0)) throw new Error('bad range');
+    const divs = (Number.isInteger(span) && span <= 16) ? span : 8;
+    let s = '<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="#c4b8e8" stroke-width="3" pathLength="1" class="an-draw"/>';
+    for (let i=0;i<=divs;i++){
+      const x = x0 + (x1-x0)*i/divs, val = v.a + span*i/divs;
+      s += '<line x1="'+x+'" y1="'+(y-9)+'" x2="'+x+'" y2="'+(y+9)+'" stroke="#c4b8e8" stroke-width="2" class="an-pop" style="animation-delay:'+(0.4+i*0.05)+'s"/>' +
+        svgT(x, y+34, +val.toFixed(2), { size:16, fill:'#c4b8e8', d:0.4+i*0.05 });
+    }
+    v.marks.forEach((mv,i)=>{
+      if (mv < v.a || mv > v.b) return;
+      const x = x0 + (x1-x0)*(mv-v.a)/span;
+      s += '<circle cx="'+x+'" cy="'+(y-26)+'" r="10" fill="#e8b64c" class="an-spin" style="animation-delay:'+(0.9+i*0.35)+'s"/>' +
+        svgT(x, y-52, mv, { size:22, fill:'#e8b64c', weight:700, d:1.0+i*0.35 });
+    });
+    return s;
+  },
+  bars(v){
+    const maxV = Math.max.apply(null, v.items.map(it=>Math.max(0,it.val))) || 1;
+    const base=300, maxH=205, slot=670/v.items.length;
+    let s = '<line x1="80" y1="'+base+'" x2="760" y2="'+base+'" stroke="rgba(255,255,255,.35)" stroke-width="2" pathLength="1" class="an-draw"/>';
+    v.items.forEach((it,i)=>{
+      const h = Math.max(4, maxH*Math.max(0,it.val)/maxV), w = Math.min(90, slot*0.62);
+      const x = 90 + slot*i + (slot-w)/2;
+      s += '<rect x="'+x.toFixed(1)+'" y="'+(base-h).toFixed(1)+'" width="'+w.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="6" fill="'+SCENE_COLORS[i%SCENE_COLORS.length]+'" class="an-grow" style="animation-delay:'+(0.25+i*0.2)+'s"/>' +
+        svgT(x+w/2, base-h-16, it.val, { size:18, fill:'#efeaff', weight:600, d:0.55+i*0.2 }) +
+        svgT(x+w/2, base+26, it.label, { size:16, fill:'#c4b8e8', max:12, d:0.25+i*0.2 });
+    });
+    return s;
+  },
+  pie(v){
+    const total = v.items.reduce((a,it)=>a+Math.max(0,it.val), 0) || 1;
+    const cx=290, cy=185, r=132;
+    let a = -Math.PI/2, s = '';
+    v.items.forEach((it,i)=>{
+      const sweep = Math.PI*2*Math.max(0,it.val)/total;
+      s += '<path d="'+arcPath(cx,cy,r,a,a+sweep)+'" fill="'+SCENE_COLORS[i%SCENE_COLORS.length]+'" stroke="#14102a" stroke-width="3" class="an-pop" style="animation-delay:'+(0.2+i*0.3)+'s"/>';
+      a += sweep;
+    });
+    v.items.forEach((it,i)=>{
+      const y = 185 - (v.items.length-1)*20 + i*40;
+      s += '<rect x="520" y="'+(y-14)+'" width="18" height="18" rx="4" fill="'+SCENE_COLORS[i%SCENE_COLORS.length]+'" class="an-pop" style="animation-delay:'+(0.5+i*0.3)+'s"/>' +
+        svgT(550, y, it.label + ' — ' + it.val, { size:18, anchor:'start', max:20, d:0.5+i*0.3 });
+    });
+    return s;
+  },
+  steps(v){
+    const n=v.items.length, gap=44, w=(800-50-(n-1)*gap)/n, h=88, y=140;
+    let s = SVG_DEFS;
+    v.items.forEach((it,i)=>{
+      const x = 25 + i*(w+gap);
+      s += '<rect x="'+x.toFixed(1)+'" y="'+y+'" width="'+w.toFixed(1)+'" height="'+h+'" rx="12" fill="rgba(255,255,255,.06)" stroke="'+SCENE_COLORS[i%SCENE_COLORS.length]+'" stroke-width="2" class="an-pop" style="animation-delay:'+(i*0.5)+'s"/>' +
+        svgT(x+w/2, y+h/2, it, { size:(n>4?15:18), max:Math.max(8, Math.floor(w/9.5)), d:i*0.5+0.1 });
+      if (i < n-1) s += '<line x1="'+(x+w+7).toFixed(1)+'" y1="'+(y+h/2)+'" x2="'+(x+w+gap-9).toFixed(1)+'" y2="'+(y+h/2)+'" stroke="#e8b64c" stroke-width="3" marker-end="url(#sfArr)" pathLength="1" class="an-draw" style="animation-delay:'+(i*0.5+0.3)+'s"/>';
+    });
+    return s;
+  },
+  cycle(v){
+    const n=v.items.length, cx=400, cy=182, R=118, nr = n>5 ? 42 : 50;
+    let s = SVG_DEFS;
+    const ang = i => -Math.PI/2 + i*Math.PI*2/n;
+    v.items.forEach((it,i)=>{
+      const x = cx + R*Math.cos(ang(i)), y = cy + R*Math.sin(ang(i));
+      s += '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+nr+'" fill="rgba(127,0,255,.20)" stroke="'+SCENE_COLORS[i%SCENE_COLORS.length]+'" stroke-width="2" class="an-pop" style="animation-delay:'+(i*0.5)+'s"/>' +
+        svgT(x, y, it, { size:15, max:11, d:i*0.5+0.1 });
+      const gapA = Math.asin(nr/R) + 0.1;
+      const a0 = ang(i)+gapA, a1 = ang(i+1)-gapA;
+      s += '<path d="M'+(cx+R*Math.cos(a0)).toFixed(1)+' '+(cy+R*Math.sin(a0)).toFixed(1)+
+        ' A'+R+' '+R+' 0 0 1 '+(cx+R*Math.cos(a1)).toFixed(1)+' '+(cy+R*Math.sin(a1)).toFixed(1)+
+        '" fill="none" stroke="#e8b64c" stroke-width="3" marker-end="url(#sfArr)" pathLength="1" class="an-draw" style="animation-delay:'+(i*0.5+0.3)+'s"/>';
+    });
+    return s;
+  },
+  parts(v){
+    const n=v.items.length, cx=400, cy=185, rx=150, ry=75;
+    let s = '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rx+'" ry="'+ry+'" fill="rgba(127,0,255,.28)" stroke="#a855f7" stroke-width="2" class="an-pop"/>' +
+      svgT(cx, cy, v.center, { size:22, weight:700, max:15, d:0.15 });
+    v.items.forEach((it,i)=>{
+      const a = -Math.PI/2 + i*Math.PI*2/n;
+      const ex = cx + rx*Math.cos(a), ey = cy + ry*Math.sin(a);
+      const lx = cx + (rx+92)*Math.cos(a), ly = cy + (ry+52)*Math.sin(a);
+      s += '<line x1="'+ex.toFixed(1)+'" y1="'+ey.toFixed(1)+'" x2="'+lx.toFixed(1)+'" y2="'+ly.toFixed(1)+'" stroke="#e8b64c" stroke-width="2" pathLength="1" class="an-draw" style="animation-delay:'+(0.35+i*0.35)+'s"/>' +
+        '<circle cx="'+ex.toFixed(1)+'" cy="'+ey.toFixed(1)+'" r="4.5" fill="#e8b64c" class="an-pop" style="animation-delay:'+(0.35+i*0.35)+'s"/>' +
+        svgT(lx, ly + (Math.sin(a) >= 0 ? 20 : -18), it, { size:17, fill:'#e8b64c', weight:600, max:14, d:0.5+i*0.35 });
+    });
+    return s;
+  },
+  timeline(v){
+    const n=v.items.length, x0=80, x1=740, y=185;
+    let s = '<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="#c4b8e8" stroke-width="3" pathLength="1" class="an-draw"/>';
+    v.items.forEach((it,i)=>{
+      const x = n===1 ? (x0+x1)/2 : x0 + 20 + (x1-x0-40)*i/(n-1);
+      s += '<circle cx="'+x.toFixed(1)+'" cy="'+y+'" r="8" fill="#e8b64c" class="an-spin" style="animation-delay:'+(0.35+i*0.35)+'s"/>' +
+        svgT(x, y-32, it.when, { size:20, fill:'#e8b64c', weight:700, max:12, d:0.4+i*0.35 }) +
+        svgT(x, y+40 + (i%2)*44, it.what, { size:15, fill:'#c4b8e8', max:15, d:0.5+i*0.35 });
+    });
+    return s;
+  },
+  equation(v){
+    return svgT(400, 150, v.text, { size:40, fill:'#e8b64c', weight:700, max:28, d:0.2 }) +
+      '<line x1="180" y1="215" x2="620" y2="215" stroke="#a855f7" stroke-width="3" pathLength="1" class="an-draw" style="animation-delay:.7s"/>';
+  },
+};
+
+function parseVisual(spec){
+  spec = mathifyAnswer(String(spec)).trim();
+  let m;
+  if ((m = /^fraction\s+(\d{1,2})\s*[\/⁄]\s*(\d{1,2})/i.exec(spec))){
+    const d = Math.min(24, Math.max(1, +m[2]));
+    return { type:'fraction', n: Math.max(0, Math.min(+m[1], d)), d };
+  }
+  if ((m = /^number\s*line\s+(-?\d+(?:\.\d+)?)\s*(?:to|[-–—])\s*(-?\d+(?:\.\d+)?)(?:\s+marks?\s+(.+))?/i.exec(spec)) && +m[2] > +m[1])
+    return { type:'numberline', a:+m[1], b:+m[2],
+      marks: m[3] ? m[3].split(/[,;]/).map(parseFloat).filter(x=>!isNaN(x)).slice(0,6) : [] };
+  if ((m = /^(bars?|pie|chart|graph)\s+(.+)/i.exec(spec))){
+    const items = m[2].split(/[,;]/).map(s=>{
+      const mm = /^(.+?)\s*[=:]\s*(-?\d+(?:\.\d+)?)\s*%?$/.exec(s.trim());
+      return mm ? { label:mm[1].trim(), val:+mm[2] } : null;
+    }).filter(Boolean).slice(0,8);
+    if (items.length >= 2) return { type:/^pie/i.test(m[1]) ? 'pie' : 'bars', items };
+  }
+  if ((m = /^(?:steps|flow|process|stages?)\s+(.+)/i.exec(spec))){
+    const items = m[1].split(/->|→|⇒|=>/).map(s=>s.trim()).filter(Boolean).slice(0,6);
+    if (items.length >= 2) return { type:'steps', items };
+  }
+  if ((m = /^(?:cycle|life\s*cycle)\s+(.+)/i.exec(spec))){
+    const items = m[1].split(/->|→|⇒|=>|,/).map(s=>s.trim()).filter(Boolean).slice(0,8);
+    if (items.length > 2 && items[items.length-1].toLowerCase() === items[0].toLowerCase()) items.pop();
+    if (items.length >= 2) return { type:'cycle', items };
+  }
+  if ((m = /^(?:parts|diagram|label)\s+([^:]+):\s*(.+)/i.exec(spec))){
+    const items = m[2].split(/[,;]/).map(s=>s.trim()).filter(Boolean).slice(0,8);
+    if (items.length) return { type:'parts', center:m[1].trim(), items };
+  }
+  if ((m = /^time\s*line\s+(.+)/i.exec(spec))){
+    const items = m[1].split(';').flatMap(seg => seg.split(/,(?=\s*\d{3,4}\s*[:\-–])/)).map(s=>{
+      const mm = /^\s*([^:–\-]{1,24}?)\s*[:–\-]\s*(.+)$/.exec(s.trim());
+      return mm ? { when:mm[1].trim(), what:mm[2].trim() } : null;
+    }).filter(Boolean).slice(0,6);
+    if (items.length >= 2) return { type:'timeline', items };
+  }
+  if ((m = /^(?:equation|formula)\s+(.+)/i.exec(spec))) return { type:'equation', text:m[1].trim() };
+  if ((m = /^text\b\s*(\S*)/i.exec(spec)))
+    return { type:'text', emoji: (m[1] && /\p{Extended_Pictographic}/u.test(m[1])) ? m[1] : '📘' };
+  return null;   // unknown visual -> the scene falls back to a text card
+}
+
+function splitPts(s){ return s.split(/;;|;/).map(x=>x.trim()).filter(Boolean).slice(0,5); }
+function parseScenes(text){
+  text = mathifyAnswer(text);
+  const out = [];
+  for (const line of text.split('\n')){
+    // accept "Scene 1: ..." but also the bare "1: ..." the local model
+    // sometimes writes (we are already inside the [SCENES] section)
+    const m = /^\s*(?:Scene\s*\d*|\d{1,2})\s*[:.-]\s*(.+)$/i.exec(line.trim());
+    if (!m || m[1].length < 3) continue;
+    const segs = m[1].split('|').map(s=>s.trim()).filter(Boolean);
+    const sc = { title:(segs[0]||'Lesson').replace(/^\*+|\*+$/g,''), visual:null, say:'', points:[], emoji:'📘' };
+    for (const seg of segs.slice(1)){
+      let mm;
+      if ((mm = /^visual\s*[:=]\s*(.+)$/i.exec(seg))) sc.visual = parseVisual(mm[1]);
+      else if ((mm = /^say\s*[:=]\s*(.+)$/i.exec(seg))) sc.say = mm[1];
+      else if ((mm = /^points?\s*[:=]\s*(.+)$/i.exec(seg))) sc.points = splitPts(mm[1]);
+      else if (!sc.visual && parseVisual(seg)) sc.visual = parseVisual(seg);
+      else if (seg.length <= 5 && /\p{Extended_Pictographic}/u.test(seg)) sc.emoji = seg;
+      else sc.points.push(...splitPts(seg));
+    }
+    sc.points = sc.points.slice(0,5);
+    out.push(sc);
+  }
+  return out.slice(0,10);
+}
+
+// a scene's slide markup — the visual draws itself; a broken visual can never
+// break the lesson, it just falls back to the text card
+function sceneMarkup(s){
+  const pts = s.points.length ? '<ul>' +
+    s.points.map((p,i)=>'<li style="animation-delay:'+(0.3+i*0.3)+'s">'+esc(p)+'</li>').join('') + '</ul>' : '';
+  const v = s.visual;
+  if (v && v.type !== 'text'){
+    try {
+      return '<h3>'+esc(s.title)+'</h3>' +
+        '<svg class="stage" viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg">'+VISUALS[v.type](v)+'</svg>' + pts;
+    } catch(e){ /* fall through to the text card */ }
+  }
+  return '<div class="emoji">'+esc((v && v.emoji) || s.emoji || '📘')+'</div><h3>'+esc(s.title)+'</h3>'+pts;
+}
+function sceneSpeech(s){
+  return s.say || (s.title + '. ' + s.points.join('. ') + (s.points.length ? '.' : ''));
+}
+
+/* legacy [SLIDES] answers (old saved chats, or a model that ignores the new
+   format) still play — each slide becomes a text-card scene */
 function parseSlides(text){
   text = mathifyAnswer(text);
   const out = [];
   for (const line of text.split('\n')){
-    // accept "Slide 1: ..." but also the bare "1: ..." the local model
-    // sometimes writes (we are already inside the [SLIDES] section)
     const m = /^\s*(?:Slide\s*\d*|\d{1,2})\s*[:.-]\s*(.+)$/i.exec(line.trim());
     if (!m || m[1].length < 4) continue;
     const segs = m[1].split('|').map(s=>s.trim());
@@ -833,12 +1094,16 @@ function parseSlides(text){
   }
   return out.slice(0,8);
 }
-function renderDeck(container, slides){
-  if (!slides.length) return;
+function slidesToScenes(slides){
+  return (slides || []).map(sl => ({ title:sl.title, emoji:sl.emoji || '📘',
+    points:sl.points || [], visual:{ type:'text', emoji:sl.emoji || '📘' }, say:'' }));
+}
+function renderScenes(container, scenes){
+  if (!scenes.length) return;
   const deck = document.createElement('div');
   deck.className = 'deck';
-  deck.innerHTML = '<div class="deck-head">📽️ LESSON SLIDES<span class="dh-count"></span><span class="dh-spacer"></span>' +
-    '<button class="dh-btn playbtn" title="Teach these slides aloud — the slides move with the lesson">' + ICON_PLAY + '</button>' +
+  deck.innerHTML = '<div class="deck-head">🎬 ANIMATED LESSON<span class="dh-count"></span><span class="dh-spacer"></span>' +
+    '<button class="dh-btn playbtn" title="Play the animated lesson — the pictures move with the teacher\'s voice">' + ICON_PLAY + '</button>' +
     '<button class="dh-btn fsbtn" title="Full screen (covers the whole screen)">' + ICON_FS + '</button>' +
     '<button class="dh-btn closebtn" title="Exit full screen" style="display:none">' + ICON_X + '</button></div>' +
     '<div class="slide"></div>' +
@@ -851,19 +1116,17 @@ function renderDeck(container, slides){
   const slideEl = deck.querySelector('.slide');
   const dots = deck.querySelector('.deck-dots');
   const counter = deck.querySelector('.dh-count');
-  slides.forEach(()=>{ const i=document.createElement('i'); dots.appendChild(i); });
+  scenes.forEach(()=>{ const i=document.createElement('i'); dots.appendChild(i); });
   let cur = -1;
   function show(n){
-    const want = Math.max(0, Math.min(slides.length-1, n));
+    const want = Math.max(0, Math.min(scenes.length-1, n));
     if (want === cur) return;                  // don't restart the animation
     cur = want;
-    const s = slides[cur];
-    slideEl.innerHTML = '<div class="emoji">'+esc(s.emoji)+'</div><h3>'+esc(s.title)+'</h3><ul>' +
-      s.points.map((p,i)=>'<li style="animation-delay:'+(0.15+i*0.22)+'s">'+esc(p)+'</li>').join('') + '</ul>';
+    slideEl.innerHTML = sceneMarkup(scenes[cur]);
     dots.querySelectorAll('i').forEach((d,i)=>d.classList.toggle('on', i===cur));
-    counter.textContent = ' ' + (cur+1) + ' / ' + slides.length;
+    counter.textContent = ' ' + (cur+1) + ' / ' + scenes.length;
     deck.querySelector('.prev').disabled = cur===0;
-    deck.querySelector('.next').disabled = cur===slides.length-1;
+    deck.querySelector('.next').disabled = cur===scenes.length-1;
   }
   // a human taking control stops the narration, so the two never fight
   function userGo(n){ if (speakingNow) stopSpeak(); show(n); }
@@ -907,13 +1170,13 @@ function renderDeck(container, slides){
     if (Math.abs(dx) > 45) userGo(cur + (dx < 0 ? 1 : -1));
   }, {passive:true});
 
-  /* presenter mode: goes full screen, then S. Sastika reads each slide and
-     the deck turns with her; the screen is released when she finishes */
+  /* presenter mode: goes full screen, then each scene animates while
+     S. Sastika speaks its narration; the screen is released when she finishes */
   const playbtn = deck.querySelector('.playbtn');
   function present(){
     setFs(true);
-    const items = slides.map((s, i) => ({
-      text: s.title + '. ' + s.points.join('. ') + '.',
+    const items = scenes.map((s, i) => ({
+      text: sceneSpeech(s),
       onStart: () => show(i),
     }));
     speakItems(items, { btn: playbtn, stopLabel: ICON_STOP, rate: 0.95,
@@ -927,7 +1190,7 @@ function renderDeck(container, slides){
 
   show(0);
   container.appendChild(deck);
-  return { show, count: slides.length, present, setFs };
+  return { show, count: scenes.length, present, setFs };
 }
 
 /* ============================ chat ============================ */
@@ -1132,9 +1395,9 @@ function sourceChips(list){
 
 /* an answer's interactive parts (deck + play buttons) — used for live
    answers AND for chats restored from storage */
-function wireAnswer(extra, explain, slides){
+function wireAnswer(extra, explain, scenes){
   let deckApi = null;
-  if (slides && slides.length) deckApi = renderDeck(extra, slides);
+  if (scenes && scenes.length) deckApi = renderScenes(extra, scenes);
   const acts = document.createElement('div');
   acts.className = 'actions';
   const play = document.createElement('button');
@@ -1153,7 +1416,7 @@ function wireAnswer(extra, explain, slides){
   acts.appendChild(play);
   if (deckApi){
     const teach = document.createElement('button');
-    teach.className = 'abtn'; teach.textContent = '📽️ Teach the slides';
+    teach.className = 'abtn'; teach.textContent = '🎬 Watch the animated lesson';
     teach.onclick = () => { if (speakingNow) stopSpeak(); else deckApi.present(); };
     acts.appendChild(teach);
   }
@@ -1221,25 +1484,27 @@ function ask(){
     if (!force && now - lastRender < 250) return;
     lastRender = now;
     let explain = raw;
-    const si = raw.indexOf('[SLIDES]');
+    // [SCENES] is the current format; [SLIDES] still accepted from old answers
+    let si = raw.indexOf('[SCENES]');
+    if (si === -1) si = raw.indexOf('[SLIDES]');
     const ei = raw.indexOf('[EXPLAIN]');
     if (ei !== -1) explain = raw.slice(ei + 9);
     if (si !== -1) explain = (ei !== -1 ? raw.slice(ei + 9, si) : raw.slice(0, si));
     explain = explain.replace(/\[END\]\s*$/,'').trim();
     bodyEl.innerHTML = md(explain) || '<span class="typing"><i></i><i></i><i></i></span>';
-    // the deck streams AFTER the text: show that slides are being made
+    // the scenes stream AFTER the text: show that the lesson is being animated
     if (si !== -1){
-      const n = (raw.slice(si + 8).match(/^\s*(?:Slide\s*)?\d{1,2}\s*[:.-]/gim) || []).length;
+      const n = (raw.slice(si + 8).match(/^\s*(?:Scene\s*|Slide\s*)?\d{1,2}\s*[:.-]/gim) || []).length;
       if (!slideNote){
         slideNote = document.createElement('div');
         slideNote.className = 'slidenote';
         extra.appendChild(slideNote);
         scrollDown();
       }
-      slideNote.innerHTML = '📽️ S. Sastika is preparing your lesson slides… ' +
-        (n ? '<b>slide ' + n + '</b> ' : '') +
+      slideNote.innerHTML = '🎬 S. Sastika is preparing your animated lesson… ' +
+        (n ? '<b>scene ' + n + '</b> ' : '') +
         '<span class="typing"><i></i><i></i><i></i></span>';
-      document.getElementById('tstatus').textContent = '🎨 Making slides…';
+      document.getElementById('tstatus').textContent = '🎬 Animating your lesson…';
     }
   };
 
@@ -1344,17 +1609,21 @@ function ask(){
     document.getElementById('tstatus').textContent = 'Ask me anything from your textbooks!';
     if (failed || !raw) return;
     let explain = raw;
-    const ei = raw.indexOf('[EXPLAIN]'), si = raw.indexOf('[SLIDES]');
+    const ei = raw.indexOf('[EXPLAIN]');
+    const sci = raw.indexOf('[SCENES]'), sli = raw.indexOf('[SLIDES]');
+    const si = sci !== -1 ? sci : sli;
     if (ei !== -1) explain = si !== -1 ? raw.slice(ei+9, si) : raw.slice(ei+9);
     else if (si !== -1) explain = raw.slice(0, si);
     explain = explain.replace(/\[END\]\s*$/,'').trim();
     history.push({ role:'user', content: question || ('My photo said: ' + ocrText.slice(0, 600)) });
     history.push({ role:'assistant', content: explain.slice(0, 3000) });
     if (slideNote){ slideNote.remove(); slideNote = null; }
-    const slides = si !== -1 ? parseSlides(raw.slice(si + 8).replace(/\[END\][\s\S]*$/,'')) : [];
-    wireAnswer(extra, explain, slides);
+    const tail = si !== -1 ? raw.slice(si + 8).replace(/\[END\][\s\S]*$/,'') : '';
+    const scenes = sci !== -1 ? parseScenes(tail)
+                 : sli !== -1 ? slidesToScenes(parseSlides(tail)) : [];
+    wireAnswer(extra, explain, scenes);
     saveChat({ q: question || '📷 (photo question)', photo: photoThumbSmall,
-      ocr: ocrText.slice(0, 1000), explain, slides, sources: srcData, ts: Date.now() });
+      ocr: ocrText.slice(0, 1000), explain, scenes, sources: srcData, ts: Date.now() });
     scrollDown();
   }
 }
@@ -1376,7 +1645,9 @@ function ask(){
     }
     if (rec.sources && rec.sources.length) bot.querySelector('.srcbox').innerHTML = sourceChips(rec.sources);
     bot.querySelector('.body').innerHTML = md(rec.explain || '');
-    wireAnswer(bot.querySelector('.extra'), rec.explain || '', rec.slides || []);
+    // old saved chats hold "slides"; new ones hold "scenes" — both replay
+    wireAnswer(bot.querySelector('.extra'), rec.explain || '',
+      (rec.scenes && rec.scenes.length) ? rec.scenes : slidesToScenes(rec.slides || []));
     feed.appendChild(bot);
   }
   for (const rec of past.slice(-3)){
@@ -1410,7 +1681,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v2.2';
+      ' · IBI Skilled Foundations Teacher v3.0';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();

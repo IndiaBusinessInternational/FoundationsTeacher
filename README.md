@@ -3,7 +3,7 @@
 **Live:** https://teacher.indiabusinessinternational.online
 
 Your friendly AI teacher — every NCERT concept from **Class 1 to Class 12**, explained
-simply, with lesson slides and a spoken lesson. Meet **Meera Miss** 🌸.
+simply, with an animated video lesson and a spoken lesson. Meet **Sastika Miss** 🌸.
 
 ## How it works
 
@@ -18,9 +18,12 @@ simply, with lesson slides and a spoken lesson. Meet **Meera Miss** 🌸.
 - **Two engines.** Out of the box answers come from the on-device IBI Local engine
   (nothing leaves the laptop, no API cost). Adding a cloud API key in
   `Backend\config.json` switches to the faster cloud engine automatically.
-- **Answers teach, not just tell.** Each reply is a simple spoken-style explanation, an
-  animated slide deck, and a Play-lesson button that reads the lesson aloud while
-  Meera Miss talks.
+- **Answers teach, not just tell.** Each reply is a simple spoken-style explanation plus
+  an **animated video lesson, generated live**: the teacher scripts scenes (fractions,
+  number lines, bar and pie charts, process flows, life cycles, labelled diagrams,
+  timelines, equations) that draw themselves on screen, full-screen with subtitles,
+  while Sastika Miss speaks each scene aloud. No video files are rendered — the
+  animation is drawn instantly in the browser for any concept, at zero cost.
 
 ## Laptop-side layout (not in this repo)
 
