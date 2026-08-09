@@ -241,7 +241,7 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v2.1</span>
+  <span class="ver-badge" id="verBadge">v2.2</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
   <button class="engine-pill" id="clearChat" title="Clear saved chat history" style="cursor:pointer">🗑</button>
@@ -1206,6 +1206,16 @@ function ask(){
   document.getElementById('tstatus').textContent = '🤔 Thinking…';
 
   let raw = '', gotFirst = false, lastRender = 0, slideNote = null, srcData = [], ocrText = '';
+  let askId = '', sawDone = false, ocrLine = null;
+  const showOcr = (text) => {
+    ocrText = text;
+    if (!ocrLine){
+      ocrLine = document.createElement('div');
+      ocrLine.className = 'ocrline';
+      srcBox.parentNode.insertBefore(ocrLine, srcBox.nextSibling);
+    }
+    ocrLine.textContent = '📷 I read from your photo: ' + (text.length > 260 ? text.slice(0, 257) + '…' : text);
+  };
   const render = (force) => {
     const now = Date.now();
     if (!force && now - lastRender < 250) return;
@@ -1233,11 +1243,20 @@ function ask(){
     }
   };
 
+  // heartbeats arrive every 15 s — total silence for 75 s means the phone's
+  // connection silently died (call/app switch); abort so recovery kicks in
+  const ctl = new AbortController();
+  let lastByte = Date.now();
+  const stallTimer = setInterval(() => {
+    if (Date.now() - lastByte > 75000) ctl.abort();
+  }, 5000);
+
   fetch('/api/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question, image: photo || undefined,
       class: +document.getElementById('classSel').value, history: history.slice(-6) }),
+    signal: ctl.signal,
   }).then(async resp => {
     if (!resp.ok || !resp.body) throw new Error('HTTP ' + resp.status);
     const reader = resp.body.getReader();
@@ -1246,6 +1265,7 @@ function ask(){
     for(;;){
       const { done, value } = await reader.read();
       if (done) break;
+      lastByte = Date.now();
       buf += dec.decode(value, { stream: true });
       let nl;
       while ((nl = buf.indexOf('\n\n')) !== -1){
@@ -1253,34 +1273,71 @@ function ask(){
         for (const line of frame.split('\n')){
           if (!line.startsWith('data:')) continue;
           let j; try { j = JSON.parse(line.slice(5)); } catch(e){ continue; }
-          if (j.status === 'reading_photo'){
+          if (j.askId){
+            askId = j.askId;
+          } else if (j.status === 'reading_photo'){
             document.getElementById('tstatus').textContent = '📷 Reading your photo…';
             bodyEl.innerHTML = '<span class="typing"><i></i><i></i><i></i></span> 📷 Reading your photo…';
           } else if (j.ocr){
-            ocrText = j.ocr;
-            const line = document.createElement('div');
-            line.className = 'ocrline';
-            line.textContent = '📷 I read from your photo: ' +
-              (j.ocr.length > 260 ? j.ocr.slice(0, 257) + '…' : j.ocr);
-            srcBox.parentNode.insertBefore(line, srcBox.nextSibling);
+            showOcr(j.ocr);
             document.getElementById('tstatus').textContent = '🤔 Thinking…';
+          } else if (j.done){
+            sawDone = true;
           } else if (j.sources){
             srcData = j.sources;
             if (j.sources.length) srcBox.innerHTML = sourceChips(j.sources);
           } else if (j.t){
             raw += j.t; gotFirst = true; render(false);
           } else if (j.error){
+            sawDone = true;
             bodyEl.innerHTML = '<span class="errline">'+esc(j.error)+'</span>';
           }
         }
       }
     }
+    clearInterval(stallTimer);
+    if (!sawDone && askId){        // stream ended early — collect the answer
+      if (await recoverAnswer()) return;
+    }
     render(true);
     finishAnswer();
-  }).catch(err => {
+  }).catch(async err => {
+    clearInterval(stallTimer);
+    if (await recoverAnswer()) return;
     bodyEl.innerHTML = '<span class="errline">Could not reach the teacher server ('+esc(err.message)+'). Please try again.</span>';
     finishAnswer(true);
   });
+
+  /* A phone call (or switching apps) kills the stream on mobile while the
+     laptop is still writing the answer. The server keeps every answer for
+     30 minutes under its askId — poll it until the answer is complete. */
+  async function recoverAnswer(){
+    if (!askId) return false;
+    document.getElementById('tstatus').textContent = '📶 Reconnecting…';
+    if (!raw) bodyEl.innerHTML = '<span class="typing"><i></i><i></i><i></i></span> 📶 Connection was interrupted — collecting your answer…';
+    for (let i = 0; i < 200; i++){                    // ~13 min of patience
+      await new Promise(r => setTimeout(r, 4000));
+      let a = null;
+      try { a = await fetch('/api/answer?id=' + askId).then(r => r.json()); }
+      catch(e){ continue; }                           // still offline — keep trying
+      if (!a || !a.found) return false;               // server restarted — give up
+      if (a.ocr && !ocrText) showOcr(a.ocr);
+      if (a.sources && !srcData.length){ srcData = a.sources; srcBox.innerHTML = sourceChips(a.sources); }
+      if (a.raw && a.raw.length > raw.length){ raw = a.raw; gotFirst = true; render(true); }
+      if (a.error){
+        bodyEl.innerHTML = '<span class="errline">'+esc(a.error)+'</span>';
+        finishAnswer(true);
+        return true;
+      }
+      if (a.done){
+        render(true);
+        finishAnswer();
+        return true;
+      }
+      document.getElementById('tstatus').textContent = '🤔 Thinking… (answer is safe, still writing)';
+    }
+    return false;
+  }
 
   function finishAnswer(failed){
     busy = false; sendBtn.disabled = false;
@@ -1353,7 +1410,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v2.1';
+      ' · IBI Skilled Foundations Teacher v2.2';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
