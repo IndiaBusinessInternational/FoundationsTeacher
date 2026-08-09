@@ -1032,26 +1032,63 @@ function parseVisual(spec){
   return null;   // unknown visual -> the scene falls back to a text card
 }
 
+function titleForVisual(v){
+  switch (v.type){
+    case 'fraction':   return 'The fraction ' + v.n + '/' + v.d;
+    case 'numberline': return 'On the number line';
+    case 'bars':       return 'Let us compare';
+    case 'pie':        return 'The whole, in parts';
+    case 'steps':      return 'Step by step';
+    case 'cycle':      return 'Round and round';
+    case 'parts':      return 'Parts of ' + v.center;
+    case 'timeline':   return 'Along the years';
+    case 'equation':   return v.text;
+    default:           return 'Lesson';
+  }
+}
 function splitPts(s){ return s.split(/;;|;/).map(x=>x.trim()).filter(Boolean).slice(0,5); }
 function parseScenes(text){
   text = mathifyAnswer(text);
   const out = [];
-  for (const line of text.split('\n')){
-    // accept "Scene 1: ..." but also the bare "1: ..." the local model
-    // sometimes writes (we are already inside the [SCENES] section)
-    const m = /^\s*(?:Scene\s*\d*|\d{1,2})\s*[:.-]\s*(.+)$/i.exec(line.trim());
-    if (!m || m[1].length < 3) continue;
-    const segs = m[1].split('|').map(s=>s.trim()).filter(Boolean);
-    const sc = { title:(segs[0]||'Lesson').replace(/^\*+|\*+$/g,''), visual:null, say:'', points:[], emoji:'📘' };
-    for (const seg of segs.slice(1)){
-      let mm;
-      if ((mm = /^visual\s*[:=]\s*(.+)$/i.exec(seg))) sc.visual = parseVisual(mm[1]);
-      else if ((mm = /^say\s*[:=]\s*(.+)$/i.exec(seg))) sc.say = mm[1];
-      else if ((mm = /^points?\s*[:=]\s*(.+)$/i.exec(seg))) sc.points = splitPts(mm[1]);
+  for (let line of text.split('\n')){
+    line = line.trim();
+    if (!line || line.startsWith('[')) continue;
+    // accept "Scene 1: ...", the bare "1: ..." the local model sometimes
+    // writes, AND lines with no scene number at all that still carry the
+    // labelled parts ("| title: ... | visual: ..." — seen from qwen3:4b)
+    const m = /^(?:Scene\s*\d*|\d{1,2})\s*[:.-]\s*(.+)$/i.exec(line);
+    let rest;
+    if (m) rest = m[1];
+    else if (/\b(?:title|visual|say|points?)\s*[:=]/i.test(line)) rest = line.replace(/^\|\s*/, '');
+    else continue;
+    if (rest.length < 3) continue;
+    const segs = rest.split('|').map(s=>s.trim()).filter(Boolean);
+    const sc = { title:'', visual:null, say:'', points:[], emoji:'📘' };
+    const labRe = /^(title|visual|say|points?)\s*[:=]\s*(.*)$/i;
+    segs.forEach((seg, idx) => {
+      const mm = labRe.exec(seg);
+      if (mm){
+        const val = mm[2].trim();
+        switch (mm[1].toLowerCase()){
+          case 'title':  sc.title = val.replace(/^\*+|\*+$/g,''); break;
+          case 'visual': sc.visual = parseVisual(val); break;
+          case 'say':    sc.say = val; break;
+          default:       sc.points.push(...splitPts(val));
+        }
+      }
+      else if (idx === 0 && !sc.title) sc.title = seg.replace(/^\*+|\*+$/g,'');
       else if (!sc.visual && parseVisual(seg)) sc.visual = parseVisual(seg);
       else if (seg.length <= 5 && /\p{Extended_Pictographic}/u.test(seg)) sc.emoji = seg;
       else sc.points.push(...splitPts(seg));
+    });
+    // small models sometimes write the visual spec AS the title
+    // ("Scene 1: fraction 3/4") — recognise it and invent a friendly title
+    if (sc.title && !sc.visual){
+      const tv = parseVisual(sc.title);
+      if (tv && tv.type !== 'text'){ sc.visual = tv; sc.title = titleForVisual(tv); }
     }
+    if (!sc.title) sc.title = sc.visual ? titleForVisual(sc.visual) : 'Lesson';
+    if (!sc.say && !sc.points.length && !sc.visual) continue;   // an empty line, not a scene
     sc.points = sc.points.slice(0,5);
     out.push(sc);
   }
