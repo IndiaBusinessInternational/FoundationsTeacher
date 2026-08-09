@@ -184,6 +184,18 @@ textarea#q:focus{outline:2px solid var(--violet-2);border-color:transparent}
 button#send{flex:0 0 auto;width:46px;height:46px;border:0;border-radius:12px;cursor:pointer;font-size:18px;
             background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff}
 button#send:disabled{opacity:.4;cursor:default}
+button#mathToggle{flex:0 0 auto;width:46px;height:46px;border-radius:12px;cursor:pointer;font-size:16px;
+            background:var(--card);color:var(--text-2);border:1px solid rgba(255,255,255,.14)}
+button#mathToggle.on{background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff;border-color:transparent}
+.mathbar{display:none;flex-direction:column;gap:6px;margin-top:8px}
+.mathbar.open{display:flex}
+.mathrow{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+.mkey{flex:0 0 auto;font-size:14px;color:var(--text);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+      border-radius:9px;padding:7px 11px;cursor:pointer;transition:.12s;font-family:Georgia,'Times New Roman',serif;line-height:1}
+.mkey:hover{background:rgba(127,0,255,.3)}
+.mkey:active{transform:scale(.93)}
+.mkey.fn{font-family:inherit;font-size:12.5px;color:var(--gold)}
+.mathtip{font-size:10px;color:var(--text-3);white-space:nowrap;overflow-x:auto}
 .hintrow{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
 .hint{font-size:11.5px;color:var(--text-2);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
       border-radius:16px;padding:5px 11px;cursor:pointer;transition:.15s}
@@ -207,7 +219,7 @@ button#send:disabled{opacity:.4;cursor:default}
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v1.12</span>
+  <span class="ver-badge" id="verBadge">v1.13</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
   <button class="engine-pill" id="clearChat" title="Clear saved chat history" style="cursor:pointer">🗑</button>
@@ -322,13 +334,20 @@ button#send:disabled{opacity:.4;cursor:default}
           <option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
         </select>
         <textarea id="q" rows="1" placeholder="Ask your question… e.g. Why does the moon change shape?"></textarea>
+        <button id="mathToggle" title="Math symbols keyboard — type equations like cosec θ − sin θ = m">√ˣ</button>
         <button id="send" title="Ask">➤</button>
+      </div>
+      <div class="mathbar" id="mathbar">
+        <div class="mathrow" id="mathSyms"></div>
+        <div class="mathrow" id="mathFns"></div>
+        <div class="mathtip">Tip: type <b>^2</b> → ², <b>^n</b> → ⁿ, <b>theta</b> → θ, <b>sqrt</b> → √, <b>&lt;=</b> → ≤ while writing</div>
       </div>
       <div class="hintrow" id="hints">
         <span class="hint">Why is the sky blue?</span>
         <span class="hint">Explain Class 6 Science chapter wise</span>
         <span class="hint">Explain Class 8 Science Chapter 5 in detail</span>
         <span class="hint">Explain fractions with an example</span>
+        <span class="hint">If tan θ + sin θ = m and tan θ − sin θ = n, show that m² − n² = 4√(mn)</span>
         <span class="hint">What is a balance sheet?</span>
       </div>
       <div class="statusline" id="statusline">…</div>
@@ -867,8 +886,90 @@ function autoSize(){
   qEl.style.height = 'auto';
   qEl.style.height = Math.min(qEl.scrollHeight, 180) + 'px';
 }
-qEl.addEventListener('input', autoSize);
 autoSize();
+
+/* ---------------- math input (equations in the question box) ---------------- */
+// Symbol chips: plain text is inserted as-is; a "|" marks where the caret lands
+// (a selected range is wrapped into that spot). [label, insert] pairs otherwise.
+const MATH_SYMS = ['θ','²','³','ⁿ','√(|)','°','½','⅓','⅔','¼','¾','π','±','×','÷','∠','Δ','α','β','≤','≥','≠','≈','∴'];
+const MATH_FNS = [
+  ['sin θ','sin θ '], ['cos θ','cos θ '], ['tan θ','tan θ '], ['cot θ','cot θ '],
+  ['sec θ','sec θ '], ['cosec θ','cosec θ '],
+  ['a∕b  fraction','(|)/( )'], ['xʸ  power','^(|)'], ['log','log '],
+  ['prove that','prove that '], ['=','= '],
+];
+function fillMathRow(rowId, items, fnClass){
+  const row = document.getElementById(rowId);
+  for (const it of items){
+    const [label, ins] = Array.isArray(it) ? it : [it.replace('|',''), it];
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'mkey' + (fnClass ? ' fn' : '');
+    b.textContent = label; b.dataset.i = ins;
+    row.appendChild(b);
+  }
+  row.addEventListener('pointerdown', e => e.preventDefault()); // keep textarea focus/caret
+  row.addEventListener('click', e => {
+    const b = e.target.closest('.mkey');
+    if (b) insertMath(b.dataset.i);
+  });
+}
+function insertMath(t){
+  const s = qEl.selectionStart ?? qEl.value.length, e = qEl.selectionEnd ?? s;
+  const sel = qEl.value.slice(s, e);
+  const bar = t.indexOf('|');
+  let ins, caret;
+  if (bar >= 0){
+    ins = t.slice(0, bar) + sel + t.slice(bar + 1);
+    caret = s + bar + sel.length;
+  } else { ins = t; caret = s + t.length; }
+  qEl.value = qEl.value.slice(0, s) + ins + qEl.value.slice(e);
+  qEl.selectionStart = qEl.selectionEnd = caret;
+  qEl.focus(); autoSize();
+}
+fillMathRow('mathSyms', MATH_SYMS, false);
+fillMathRow('mathFns', MATH_FNS, true);
+
+const mathToggle = document.getElementById('mathToggle');
+const mathbar = document.getElementById('mathbar');
+function setMathbar(on){
+  mathbar.classList.toggle('open', on);
+  mathToggle.classList.toggle('on', on);
+  try { localStorage.setItem('sft_math', on ? '1' : '0'); } catch {}
+}
+mathToggle.addEventListener('click', () => setMathbar(!mathbar.classList.contains('open')));
+try { if (localStorage.getItem('sft_math') === '1') setMathbar(true); } catch {}
+
+// Smart shortcuts while typing: ^2 → ², theta → θ, sqrt → √, <= → ≤ …
+// Only the text BEFORE the caret is rewritten, so the caret never jumps.
+const SUP = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','n':'ⁿ','+':'⁺','-':'⁻'};
+function mathify(s){
+  return s
+    .replace(/\^([0-9n+\-]+)/g, (m, g) => {
+      let out = '';
+      for (const ch of g){ if (!SUP[ch]) return m; out += SUP[ch]; }
+      return out;
+    })
+    .replace(/\btheta\b/gi, 'θ')
+    .replace(/\bsqrt\b/gi, '√')
+    // these are prefixes of everyday words (pizza, degree, alphabet…), so they
+    // only convert once a non-letter follows them
+    .replace(/\bpi(?=[^a-zA-Z])/g, 'π')
+    .replace(/\bdeg(?=[^a-zA-Z])/gi, '°')
+    .replace(/\balpha(?=[^a-zA-Z])/gi, 'α')
+    .replace(/\bbeta(?=[^a-zA-Z])/gi, 'β')
+    .replace(/\bdelta(?=[^a-zA-Z])/gi, 'Δ')
+    .replace(/<=/g, '≤').replace(/>=/g, '≥').replace(/!=/g, '≠').replace(/\+-/g, '±');
+}
+qEl.addEventListener('input', () => {
+  const pos = qEl.selectionStart ?? qEl.value.length;
+  const before = qEl.value.slice(0, pos), after = qEl.value.slice(pos);
+  const nb = mathify(before);
+  if (nb !== before){
+    qEl.value = nb + after;
+    qEl.selectionStart = qEl.selectionEnd = nb.length;
+  }
+  autoSize();
+});
 
 qEl.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); ask(); }
@@ -1080,7 +1181,7 @@ function refreshStatus(){
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v1.12';
+      ' · IBI Skilled Foundations Teacher v1.13';
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
