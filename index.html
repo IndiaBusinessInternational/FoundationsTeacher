@@ -43,8 +43,21 @@ h1 small{display:block;font-size:10.5px;font-weight:500;color:var(--text-3);lett
              border-radius:20px;padding:5px 11px;white-space:nowrap}
 .engine-pill b{color:var(--green);font-weight:600}
 .engine-pill.off b{color:var(--red)}
-main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;margin:0 auto;padding:18px}
-@media(max-width:860px){ main{grid-template-columns:1fr;padding:12px} .teacher-col{order:-1} }
+/* second engine shown only when the photo job runs somewhere else */
+.pill-photo{margin-left:7px;padding-left:7px;border-left:1px solid rgba(255,255,255,.18);
+            color:var(--text-2);font-weight:600}
+@media(max-width:600px){ .pill-photo{display:none} }
+/* Use the screen. This was capped at 1150px, which threw away ~40% of the
+   width of an ordinary laptop screen and left the lesson panel small. The cap
+   is now high enough to fill a 1920 display (with breathing room at the
+   edges); readability is protected where it actually matters — on the prose
+   messages — rather than by starving the whole layout. */
+main{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;
+     max-width:1720px;margin:0 auto;padding:18px}
+/* the teacher panel is a fixed cost — give the chat more of a small laptop */
+@media(max-width:1240px){ main{grid-template-columns:290px minmax(0,1fr);gap:14px} }
+@media(max-width:860px){ main{grid-template-columns:1fr;gap:12px;padding:10px} .teacher-col{order:-1} }
+@media(max-width:600px){ main{padding:8px;gap:10px} }
 
 /* ---------------- teacher panel ---------------- */
 .teacher-col{position:relative}
@@ -54,7 +67,10 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
   .teacher-card{position:static;display:flex;align-items:center;gap:14px;text-align:left;padding:12px 14px}
   .teacher-card svg{width:96px;height:96px}
   .teacher-card .avatar-wrap{flex:0 0 auto}
-  .teacher-card #teacherPhoto{width:96px}
+  /* ⚠ .photo-canvas must be listed too. The visible avatar is the CANVAS, not
+     the <img> — naming only #teacherPhoto left it at its 210px desktop size on
+     phones, so the teacher card ate ~240px of screen before any answer showed. */
+  .teacher-card #teacherPhoto,.teacher-card .photo-canvas{width:96px;height:96px}
   .teacher-card .tname{margin-top:0}
 }
 .teacher-card svg{width:210px;height:210px;max-width:100%}
@@ -98,8 +114,12 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
 /* ---------------- chat ---------------- */
 .chat-col{display:flex;flex-direction:column;min-width:0}
 #feed{flex:1;display:flex;flex-direction:column;gap:14px;padding-bottom:14px}
-.msg{max-width:92%;border-radius:var(--radius);padding:13px 16px;font-size:14.5px;line-height:1.62;
+/* Prose gets a reading-width cap of its own. A very wide window should give
+   you a bigger lesson and a bigger composer — not 1300px-long lines of text,
+   which are genuinely harder to read than the narrow layout was. */
+.msg{max-width:min(92%,880px);border-radius:var(--radius);padding:13px 16px;font-size:14.5px;line-height:1.62;
      animation:pop .25s ease;overflow-wrap:break-word}
+@media(max-width:600px){ .msg{max-width:97%;padding:11px 13px} }
 @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .msg.user{align-self:flex-end;background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:#fff;border-bottom-right-radius:5px}
 .msg.bot{align-self:flex-start;background:var(--card);border:1px solid rgba(255,255,255,.08);border-bottom-left-radius:5px;width:92%}
@@ -132,7 +152,9 @@ main{display:grid;grid-template-columns:330px 1fr;gap:18px;max-width:1150px;marg
 /* Each scene is an SVG picture that draws itself: lines trace in, bars grow,
    labels pop — the CSS animations restart every time a scene is (re)shown
    because show() rebuilds the DOM. */
-.stage{display:block;width:100%;max-width:720px;height:auto;margin:6px auto 0}
+/* The animated lesson is the thing worth making big — it was capped at 720px
+   regardless of screen size. Unlike prose, a diagram only gets better wider. */
+.stage{display:block;width:100%;max-width:min(100%,1200px);height:auto;margin:6px auto 0}
 .deck.fs .stage{max-height:56vh;max-width:min(92vw,1000px)}
 .stage text{font-family:'Segoe UI',system-ui,sans-serif}
 .an-pop{opacity:0;animation:svgpop .55s ease forwards}
@@ -2012,13 +2034,22 @@ function refreshStatus(){
     const cloud = s.engine === 'cloud';
     const up = cloud || s.localEngineUp;
     pill.classList.toggle('off', !up);
-    pill.innerHTML = 'Engine: <b>' + (cloud ? esc(s.engineName || 'IBI Cloud') + ' ✓' :
-      (s.localEngineUp ? 'IBI Local ✓' : 'IBI Local — offline')) + '</b>';
+    // Two jobs can run on two engines now, so the pill names the photo engine
+    // whenever it differs — otherwise it silently reports only half the truth.
+    const chatName = cloud ? (s.engineName || 'IBI Cloud') + ' ✓'
+                           : (s.localEngineUp ? 'IBI Local ✓' : 'IBI Local — offline');
+    const bare = (n) => String(n || '').replace(/\s*\(.*\)$/, '').replace(/ ✓| — offline/, '');
+    const photo = s.visionEngineName && bare(s.visionEngineName) !== bare(chatName)
+      ? ' <span class="pill-photo" title="Engine used to read a photographed question">📷 ' +
+        esc(bare(s.visionEngineName)) + '</span>' : '';
+    pill.innerHTML = 'Engine: <b>' + esc(chatName) + '</b>' + photo;
     const line = document.getElementById('statusline');
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
+    // read the version from the badge so the footer can never drift from it
+    const ver = (document.getElementById('verBadge') || {}).textContent || '';
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
       (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher v4.0';
+      ' · IBI Skilled Foundations Teacher ' + ver;
   }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
 }
 refreshStatus();
