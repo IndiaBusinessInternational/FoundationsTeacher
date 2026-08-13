@@ -146,6 +146,14 @@ main{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;
        border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.13);border-radius:8px;padding:5px 9px;opacity:.85}
 .copyq:hover{opacity:1;background:rgba(255,255,255,.26)}
 .copyi.done{background:rgba(16,185,129,.32)!important;border-color:rgba(16,185,129,.6);opacity:1}
+/* ...and each part of an answer can be copied on its own. The button FLOATS,
+   so it only shortens the first line instead of gutter-ing the whole block. */
+.asec::after{content:"";display:table;clear:both}
+.seccopy{float:right;margin:1px 0 4px 12px;font-size:11px;font-weight:600;font-family:inherit;
+         color:var(--text-2);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);
+         border-radius:8px;padding:4px 8px;cursor:pointer;opacity:.7;transition:.15s}
+.seccopy:hover{opacity:1;background:rgba(255,255,255,.15);color:var(--text)}
+@media(max-width:600px){ .seccopy span{display:none} .seccopy{padding:4px 6px} }
 .typing{display:inline-flex;gap:4px;align-items:center;padding:4px 0}
 .typing i{width:6px;height:6px;border-radius:50%;background:var(--text-3);animation:blinkdot 1.2s infinite}
 .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
@@ -365,7 +373,7 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge" title="v4.2 — Copy anything you have already asked or been taught. Every question you asked now carries a Copy button, and every answer carries Copy answer, so a question can be pasted straight back into the box to ask it again, and a lesson can be pasted into your notes. v4.1 — Pick the engine per job. The teacher calls a model in exactly two places, and the best brain differs by job, so ⚙ AI engine now lets you choose one for Answers &amp; animated lessons and another for Reading a photographed question. Photos can now be read by Gemini, ChatGPT or Claude as well as the laptop's own gemma3:4b — far better on messy handwriting — and a cloud failure falls back to the laptop so a photo is never rejected outright. Auto now means best-available FOR THAT JOB: a DeepSeek key is the best answer engine but cannot see a photo, so photos stay on the laptop instead of spending a failed call. Each choice says in plain words what it will actually do, and an engine that cannot read images is never offered for photos. v4.0 — Animated video lessons ([SCENES] to self-animating SVG synced to speech) and multi-engine settings.">v4.2</span>
+  <span class="ver-badge" id="verBadge" title="v4.3 — Copy any single part of an answer. Every part of a lesson now carries its own small Copy button — a ### section when the answer has sections, otherwise each paragraph — so one step can be taken into your notes without the rest. v4.2 — Copy anything you have already asked or been taught. Every question you asked now carries a Copy button, and every answer carries Copy answer, so a question can be pasted straight back into the box to ask it again, and a lesson can be pasted into your notes. v4.1 — Pick the engine per job. The teacher calls a model in exactly two places, and the best brain differs by job, so ⚙ AI engine now lets you choose one for Answers &amp; animated lessons and another for Reading a photographed question. Photos can now be read by Gemini, ChatGPT or Claude as well as the laptop's own gemma3:4b — far better on messy handwriting — and a cloud failure falls back to the laptop so a photo is never rejected outright. Auto now means best-available FOR THAT JOB: a DeepSeek key is the best answer engine but cannot see a photo, so photos stay on the laptop instead of spending a failed call. Each choice says in plain words what it will actually do, and an engine that cannot read images is never offered for photos. v4.0 — Animated video lessons ([SCENES] to self-animating SVG synced to speech) and multi-engine settings.">v4.3</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
   <button class="engine-pill" id="engineCfg" title="AI engine settings — add a DeepSeek, Gemini, ChatGPT or Claude key" style="cursor:pointer">⚙</button>
@@ -1921,6 +1929,69 @@ function wireCopy(btn, getText, label, title){
   return btn;
 }
 
+/* An answer is copied as READABLE text — the ### and ** markers are for the
+   screen, not for the notebook it gets pasted into. */
+function plainCopy(t){
+  return (t || '').replace(/^\s{0,3}#{1,6}\s*/gm, '').replace(/\*\*/g, '').trim();
+}
+/* ...and it splits into parts, so one part can be taken on its own. ### headings
+   are the real sections when the answer has them (detailed / chapter / question
+   modes); a short everyday answer has none, so its own paragraphs are the parts —
+   a list always stays with the line that introduces it. */
+function splitSections(text){
+  const src = text || '';
+  const secs = [];
+  let cur = null, fence = false;
+  for (const ln of src.split('\n')){
+    if (/^\s*```/.test(ln)) fence = !fence;
+    if (!fence && /^\s{0,3}#{1,6}\s+\S/.test(ln)){
+      cur = { title: ln.replace(/^\s*#+\s*/, '').replace(/\*\*/g, '').trim(), lines: [ln] };
+      secs.push(cur);
+    } else {
+      if (!cur){ cur = { title: '', lines: [] }; secs.push(cur); }
+      cur.lines.push(ln);
+    }
+  }
+  // a one-line greeting is not worth its own button; a real part is
+  const worth = (title, text) => !!title || text.length >= 100 || text.includes('\n');
+  const heads = secs.map(s => { const text = s.lines.join('\n').trim();
+                                return { title: s.title, text, copyable: worth(s.title, text) }; })
+                    .filter(s => s.text);
+  if (heads.filter(s => s.title).length >= 2) return heads;
+  if (src.includes('```')) return heads;              // never slice a code block apart
+  const blocks = [];
+  for (const b of src.split(/\n\s*\n/)){
+    const t = b.trim();
+    if (!t) continue;
+    const isList = /^\s*(?:[-*•·]|\d+[.)])\s/.test(t);
+    if (isList && blocks.length) blocks[blocks.length - 1] += '\n\n' + t;
+    else blocks.push(t);
+  }
+  if (blocks.length < 2) return heads;
+  return blocks.map(t => ({ title: '', text: t, copyable: worth('', t) }));
+}
+function renderAnswerBody(bodyEl, explain){
+  const secs = splitSections(explain);
+  if (secs.length < 2 || secs.filter(s => s.copyable).length < 2){
+    bodyEl.innerHTML = md(explain || '');            // one part = the whole answer
+    return;
+  }
+  bodyEl.innerHTML = '';
+  for (const s of secs){
+    const d = document.createElement('div');
+    d.className = 'asec';
+    d.innerHTML = md(s.text);
+    if (s.copyable){
+      const cp = document.createElement('button');
+      cp.className = 'seccopy copyi';
+      wireCopy(cp, () => plainCopy(s.text), 'Copy',
+        s.title ? 'Copy this part — ' + s.title : 'Copy this part of the answer');
+      d.insertBefore(cp, d.firstChild);              // float: shortens the first line only
+    }
+    bodyEl.appendChild(d);
+  }
+}
+
 function addUserMsg(text, photoUrl){
   const m = document.createElement('div');
   m.className = 'msg user'; m.textContent = text;
@@ -1979,7 +2050,7 @@ function wireAnswer(extra, explain, scenes, sources){
   if (explain && explain.trim()){
     const cp = document.createElement('button');
     cp.className = 'abtn copyi';
-    acts.appendChild(wireCopy(cp, () => explain.trim(), 'Copy answer', 'Copy this answer'));
+    acts.appendChild(wireCopy(cp, () => plainCopy(explain), 'Copy answer', 'Copy the whole answer'));
   }
   extra.appendChild(acts);
 }
@@ -2179,6 +2250,7 @@ function ask(){
     history.push({ role:'user', content: question || ('My photo said: ' + ocrText.slice(0, 600)) });
     history.push({ role:'assistant', content: explain.slice(0, 3000) });
     if (slideNote){ slideNote.remove(); slideNote = null; }
+    renderAnswerBody(bodyEl, explain);        // final pass: each part gets its own copy button
     const tail = si !== -1 ? raw.slice(si + 8).replace(/\[END\][\s\S]*$/,'') : '';
     const scenes = sci !== -1 ? parseScenes(tail)
                  : sli !== -1 ? slidesToScenes(parseSlides(tail)) : [];
@@ -2205,7 +2277,7 @@ function ask(){
       bot.insertBefore(line, bot.querySelector('.body'));
     }
     if (rec.sources && rec.sources.length) bot.querySelector('.srcbox').innerHTML = sourceChips(rec.sources);
-    bot.querySelector('.body').innerHTML = md(rec.explain || '');
+    renderAnswerBody(bot.querySelector('.body'), rec.explain || '');
     // old saved chats hold "slides"; new ones hold "scenes" — both replay
     wireAnswer(bot.querySelector('.extra'), rec.explain || '',
       (rec.scenes && rec.scenes.length) ? rec.scenes : slidesToScenes(rec.slides || []),
