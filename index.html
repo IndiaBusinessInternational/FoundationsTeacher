@@ -376,7 +376,7 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge" title="v4.4 — The textbook slide now shows the actual PICTURE. It searches the cited page and its neighbours for the figure whose caption matches the lesson, crops to that figure with its labels, and names it under the card — instead of showing whichever page the words came from, which was often solid text. It reads drawn figures as well as photographs, ignores the page background and the &quot;not to be republished&quot; watermark, and handles the new primary books whose pictures carry no captions. When nothing convincing is found it still shows the cited page and never claims a picture. v4.3 — Copy any single part of an answer. Every part of a lesson now carries its own small Copy button — a ### section when the answer has sections, otherwise each paragraph — so one step can be taken into your notes without the rest. v4.2 — Copy anything you have already asked or been taught. Every question you asked now carries a Copy button, and every answer carries Copy answer, so a question can be pasted straight back into the box to ask it again, and a lesson can be pasted into your notes. v4.1 — Pick the engine per job. The teacher calls a model in exactly two places, and the best brain differs by job, so ⚙ AI engine now lets you choose one for Answers &amp; animated lessons and another for Reading a photographed question. Photos can now be read by Gemini, ChatGPT or Claude as well as the laptop's own gemma3:4b — far better on messy handwriting — and a cloud failure falls back to the laptop so a photo is never rejected outright. Auto now means best-available FOR THAT JOB: a DeepSeek key is the best answer engine but cannot see a photo, so photos stay on the laptop instead of spending a failed call. Each choice says in plain words what it will actually do, and an engine that cannot read images is never offered for photos. v4.0 — Animated video lessons ([SCENES] to self-animating SVG synced to speech) and multi-engine settings.">v4.4</span>
+  <span class="ver-badge" id="verBadge" title="v4.5 — The textbook picture now STAYS on the screen. The lesson waits for the page to finish loading before Sastika starts that slide, and holds the picture for seven seconds after she finishes it, so it is there to be studied instead of flashing past. Her words on that slide now ask the student to read the labels around the picture. v4.4 — The textbook slide now shows the actual PICTURE. It searches the cited page and its neighbours for the figure whose caption matches the lesson, crops to that figure with its labels, and names it under the card — instead of showing whichever page the words came from, which was often solid text. It reads drawn figures as well as photographs, ignores the page background and the &quot;not to be republished&quot; watermark, and handles the new primary books whose pictures carry no captions. When nothing convincing is found it still shows the cited page and never claims a picture. v4.3 — Copy any single part of an answer. Every part of a lesson now carries its own small Copy button — a ### section when the answer has sections, otherwise each paragraph — so one step can be taken into your notes without the rest. v4.2 — Copy anything you have already asked or been taught. Every question you asked now carries a Copy button, and every answer carries Copy answer, so a question can be pasted straight back into the box to ask it again, and a lesson can be pasted into your notes. v4.1 — Pick the engine per job. The teacher calls a model in exactly two places, and the best brain differs by job, so ⚙ AI engine now lets you choose one for Answers &amp; animated lessons and another for Reading a photographed question. Photos can now be read by Gemini, ChatGPT or Claude as well as the laptop's own gemma3:4b — far better on messy handwriting — and a cloud failure falls back to the laptop so a photo is never rejected outright. Auto now means best-available FOR THAT JOB: a DeepSeek key is the best answer engine but cannot see a photo, so photos stay on the laptop instead of spending a failed call. Each choice says in plain words what it will actually do, and an engine that cannot read images is never offered for photos. v4.0 — Animated video lessons ([SCENES] to self-animating SVG synced to speech) and multi-engine settings.">v4.5</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
   <button class="engine-pill" id="engineCfg" title="AI engine settings — add a DeepSeek, Gemini, ChatGPT or Claude key" style="cursor:pointer">⚙</button>
@@ -850,10 +850,24 @@ function speakItems(items, opts){
   return speakBrowserItems(items, opts || {});
 }
 
+/* A slide that has to LOAD something (the real textbook figure) must not be
+   narrated away before it appears — `ready` holds the narration until the
+   picture is on screen, `hold` keeps it there afterwards to be looked at. */
+function itemReady(it){
+  const p = typeof it.ready === 'function' ? it.ready() : it.ready;
+  if (!p) return null;
+  return Promise.race([Promise.resolve(p).catch(() => {}), wait(12000)]);   // never hang the lesson
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+/* how long the real textbook figure stays on screen after its narration —
+   a picture worth fetching is worth looking at */
+const PAGE_HOLD_MS = 7000;
+
 async function speakServerItems(items, opts, voiceId){
   stopSpeak();
   const token = ++speakToken;
-  const list = items.map(it => ({ text: cleanForSpeech(it.text || ''), onStart: it.onStart }));
+  const list = items.map(it => ({ text: cleanForSpeech(it.text || ''), onStart: it.onStart,
+                                  ready: it.ready, hold: it.hold || 0 }));
   if (!list.some(it => it.text || it.onStart)) return false;
   speakingNow = true; startTalking();
   markPlaying(opts.btn, opts.stopLabel || ICON_STOP + ' Stop');
@@ -874,6 +888,9 @@ async function speakServerItems(items, opts, voiceId){
     pending = i + 1 < list.length ? fetchOne(list[i + 1]) : null;
     if (token !== speakToken || !speakingNow) return true;
     if (list[i].onStart){ try { list[i].onStart(); } catch (e) {} }
+    const rp = itemReady(list[i]);
+    if (rp) await rp;                                   // wait for the picture
+    if (token !== speakToken || !speakingNow) return true;
     setCaption(list[i].text);
     speechText = list[i].text; speechFrac = -1;
     if (blob){
@@ -884,6 +901,7 @@ async function speakServerItems(items, opts, voiceId){
       });
       URL.revokeObjectURL(url);
     }
+    if (list[i].hold){ await wait(list[i].hold); }      // ...and leave it up to be looked at
   }
   if (token === speakToken){ endSpeak(); if (opts.onEnd) opts.onEnd(); }
   return true;
@@ -897,28 +915,40 @@ function speakBrowserItems(items, opts){
   const steps = [];
   for (const it of items){
     const groups = speechGroups(it.text);
-    if (!groups.length && it.onStart) steps.push({ text: '', onStart: it.onStart });
-    groups.forEach((g, gi) => steps.push({ text: g, onStart: gi === 0 ? it.onStart : null }));
+    if (!groups.length && it.onStart)
+      steps.push({ text: '', onStart: it.onStart, ready: it.ready, hold: it.hold || 0 });
+    groups.forEach((g, gi) => steps.push({ text: g, onStart: gi === 0 ? it.onStart : null,
+      ready: gi === 0 ? it.ready : null,                       // wait before the first word
+      hold: gi === groups.length - 1 ? (it.hold || 0) : 0 }));  // hold after the last
   }
   if (!steps.length) return false;
   speakingNow = true; startTalking();
   markPlaying(opts.btn, opts.stopLabel || ICON_STOP + ' Stop');
   let i = 0;
+  const after = step => () => {
+    if (step.hold) setTimeout(next, step.hold);          // leave the picture up
+    else next();
+  };
   const next = () => {
     if (token !== speakToken || !speakingNow) return;
     if (i >= steps.length){ endSpeak(); if (opts.onEnd) opts.onEnd(); return; }
     const step = steps[i++];
     if (step.onStart){ try { step.onStart(); } catch(e){} }
-    setCaption(step.text);
-    if (!step.text){ next(); return; }
-    const u = new SpeechSynthesisUtterance(step.text);
-    if (voice){ u.voice = voice; u.lang = voice.lang; }
-    u.rate = opts.rate || 0.97; u.pitch = 1.06;
-    speechText = step.text; speechFrac = -1;
-    u.onboundary = e => { speechFrac = Math.min(1, e.charIndex / Math.max(1, step.text.length)); };
-    u.onend = next;
-    u.onerror = () => { if (token === speakToken){ endSpeak(); if (opts.onEnd) opts.onEnd(); } };
-    speechSynthesis.speak(u);
+    const say = () => {
+      if (token !== speakToken || !speakingNow) return;
+      setCaption(step.text);
+      if (!step.text){ after(step)(); return; }
+      const u = new SpeechSynthesisUtterance(step.text);
+      if (voice){ u.voice = voice; u.lang = voice.lang; }
+      u.rate = opts.rate || 0.97; u.pitch = 1.06;
+      speechText = step.text; speechFrac = -1;
+      u.onboundary = e => { speechFrac = Math.min(1, e.charIndex / Math.max(1, step.text.length)); };
+      u.onend = after(step);
+      u.onerror = () => { if (token === speakToken){ endSpeak(); if (opts.onEnd) opts.onEnd(); } };
+      speechSynthesis.speak(u);
+    };
+    const rp = itemReady(step);
+    if (rp) rp.then(say); else say();                    // wait for the picture first
   };
   next();
   return true;
@@ -1632,8 +1662,9 @@ function withBookPage(scenes, sources, explain){
     visual: { type:'page', cls:s.class, file:s.file, page:s.page, topic,
               caption:'Class ' + s.class + (where ? ' · ' + where : '') +
                       ' · ' + (s.chapter || '') + ', page ' + s.page },
-    say: 'This is from your own Class ' + s.class + ' ' + (s.subject || '') +
-         ' book' + (s.chapter ? ', ' + s.chapter : '') + '. Look at it while I explain.',
+    say: 'This is the very picture from your own Class ' + s.class + ' ' + (s.subject || '') +
+         ' book' + (s.chapter ? ', ' + s.chapter : '') + '. Look at it carefully, and read the ' +
+         'words written around it. I will wait here while you look at each part.',
     points: [], emoji:'📖',
   };
   const at = Math.min(1, scenes.length);
@@ -1927,13 +1958,14 @@ function renderScenes(container, scenes){
   const dots = deck.querySelector('.deck-dots');
   const counter = deck.querySelector('.dh-count');
   scenes.forEach(()=>{ const i=document.createElement('i'); dots.appendChild(i); });
-  let cur = -1;
+  let cur = -1, painting = null;
+  const isPage = i => !!(scenes[i] && scenes[i].visual && scenes[i].visual.type === 'page');
   function show(n){
     const want = Math.max(0, Math.min(scenes.length-1, n));
     if (want === cur) return;                  // don't restart the animation
     cur = want;
     slideEl.innerHTML = sceneMarkup(scenes[cur]);
-    hydrateBookPages(slideEl);           // real textbook pages draw themselves in
+    painting = hydrateBookPages(slideEl);      // real textbook pages draw themselves in
     dots.querySelectorAll('i').forEach((d,i)=>d.classList.toggle('on', i===cur));
     counter.textContent = ' ' + (cur+1) + ' / ' + scenes.length;
     deck.querySelector('.prev').disabled = cur===0;
@@ -1989,6 +2021,11 @@ function renderScenes(container, scenes){
     const items = scenes.map((s, i) => ({
       text: sceneSpeech(s),
       onStart: () => show(i),
+      // ⚠ the textbook figure takes a second or two to load and crop; without
+      //   this it appeared exactly as its one-line narration ended, so it
+      //   "popped up and went straight back"
+      ready: isPage(i) ? () => painting : null,
+      hold: isPage(i) ? PAGE_HOLD_MS : 0,
     }));
     speakItems(items, { btn: playbtn, stopLabel: ICON_STOP, rate: 0.95,
                         onEnd: () => setFs(false) });
@@ -2001,7 +2038,7 @@ function renderScenes(container, scenes){
 
   show(0);
   container.appendChild(deck);
-  return { show, count: scenes.length, present, setFs };
+  return { show, count: scenes.length, present, setFs, isPage, painting: () => painting };
 }
 
 /* ============================ chat ============================ */
@@ -2327,10 +2364,16 @@ function wireAnswer(extra, explain, scenes, sources){
     if (deckApi) deckApi.setFs(true);
     const secs = lessonSections(explain);
     const N = deckApi ? deckApi.count : 0;
-    const items = secs.map((t, i) => ({
-      text: t,
-      onStart: N ? () => deckApi.show(Math.min(N - 1, Math.floor(i * N / secs.length))) : null,
-    }));
+    const items = secs.map((t, i) => {
+      const at = N ? Math.min(N - 1, Math.floor(i * N / secs.length)) : -1;
+      const page = at >= 0 && deckApi.isPage(at);
+      return {
+        text: t,
+        onStart: N ? () => deckApi.show(at) : null,
+        ready: page ? () => deckApi.painting() : null,
+        hold: page ? PAGE_HOLD_MS : 0,
+      };
+    });
     speakItems(items, { btn: play, onEnd: () => { if (deckApi) deckApi.setFs(false); } });
   };
   acts.appendChild(play);
