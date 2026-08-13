@@ -155,6 +155,31 @@ main{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;
 /* The animated lesson is the thing worth making big — it was capped at 720px
    regardless of screen size. Unlike prose, a diagram only gets better wider. */
 .stage{display:block;width:100%;max-width:min(100%,1200px);height:auto;margin:6px auto 0}
+
+/* ---- hand-drawn subject diagram (anatomy etc.) ----
+   Portrait, so it is capped by HEIGHT: a tall figure that filled the width
+   would push its own labels off a laptop slide. */
+.stage.figure{max-width:min(100%,560px);max-height:min(58vh,500px);width:auto;margin-inline:auto}
+.deck.fs .stage.figure{max-height:64vh}
+.fbody{fill:rgba(255,255,255,.045);stroke:rgba(255,255,255,.16);stroke-width:2}
+.fpart{fill:none;stroke:var(--violet-2,#c4a2ff);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;
+       stroke-dasharray:1400;stroke-dashoffset:1400;animation:fdraw 1s ease forwards}
+.fpart.fill{fill:rgba(196,162,255,.22)}
+.fpart.quiet{stroke:rgba(255,255,255,.32);stroke-width:3}
+@keyframes fdraw{to{stroke-dashoffset:0}}
+.flabg{opacity:0;animation:flabin .5s ease forwards}
+@keyframes flabin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.flead{stroke:rgba(255,255,255,.34);stroke-width:1.5;stroke-dasharray:3 3}
+.flab{fill:var(--gold,#e8b64c);font-size:17px;font-weight:700;
+      font-family:inherit;paint-order:stroke;stroke:rgba(0,0,0,.5);stroke-width:3}
+@media(max-width:600px){ .flab{font-size:19px} }
+
+/* no-visual card: the scene's own key words instead of a bare emoji */
+.emoji.small{font-size:34px}
+.termcard{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px auto 2px;max-width:640px}
+.term{background:rgba(196,162,255,.14);border:1px solid rgba(196,162,255,.3);color:var(--text);
+      border-radius:999px;padding:6px 13px;font-size:14px;font-weight:600;
+      opacity:0;animation:flabin .45s ease forwards}
 .deck.fs .stage{max-height:56vh;max-width:min(92vw,1000px)}
 .stage text{font-family:'Segoe UI',system-ui,sans-serif}
 .an-pop{opacity:0;animation:svgpop .55s ease forwards}
@@ -1189,6 +1214,57 @@ function visualIsRelevant(sc){
   }
   return true;
 }
+/* ==================== real subject diagrams ====================
+   Small models cannot draw anatomy, and when their visual is rejected the
+   scene used to fall back to a bare emoji — a lightbulb captioned "Part 2"
+   for a digestive-system lesson. These are hand-drawn, anatomically ordered
+   diagrams that are ALWAYS correct, work offline on any engine, and draw
+   themselves part by part so the picture builds while the teacher speaks.
+   `match` decides when a topic owns the slide; `parts` are drawn in order. */
+const DIAGRAMS = {
+  digestive: {
+    match: /digest|aliment(ary)?|oesophag|esophag|stomach|intestine|liver|pancrea|swallow/i,
+    title: 'The digestive system',
+    /* the box extends well past the body on both sides: the labels live out
+       there, and at 0 0 360 560 they were sliced off ("Food p…") */
+    viewBox: '-110 8 580 564',
+    /* body silhouette first (never highlighted), then the tract in the order
+       food actually travels — that order IS the lesson */
+    body: '<circle cx="180" cy="62" r="44"/><path d="M120,104 C120,96 240,96 240,104 L252,300 C256,420 240,520 180,540 C120,520 104,420 108,300 Z"/>',
+    /* lx/ly = where the label sits, ax/ay = the point on the organ it points
+       at, so every leader line lands on the thing it names */
+    parts: [
+      { label:'Mouth',           d:'M164,86 C172,78 188,78 196,86 C188,96 172,96 164,86 Z', fill:true,
+        lx:298, ly:80,  ax:198, ay:86 },
+      { label:'Food pipe',       d:'M180,98 L180,196',
+        lx:298, ly:150, ax:184, ay:150 },
+      { label:'Liver',           d:'M112,196 C146,190 168,200 170,216 C150,226 118,222 110,210 Z', fill:true,
+        lx:62,  ly:196, ax:112, ay:206, left:true },
+      { label:'Stomach',         d:'M182,198 C230,196 250,230 236,256 C222,282 180,284 160,264 C146,250 152,230 170,228', fill:true,
+        lx:298, ly:236, ax:246, ay:236 },
+      { label:'Small intestine', d:'M176,282 C150,300 214,308 190,330 C166,352 226,356 200,378 C174,400 232,404 206,424',
+        lx:62,  ly:352, ax:176, ay:352, left:true },
+      { label:'Large intestine', d:'M252,438 L252,330 C252,312 240,304 226,304 L134,304 C118,304 110,314 110,330 L110,440',
+        lx:298, ly:330, ax:252, ay:346 },
+      { label:'Rectum',          d:'M110,442 C110,470 138,486 164,478 L176,474',
+        lx:62,  ly:486, ax:112, ay:470, left:true },
+    ],
+  },
+};
+/* pick a diagram only when the scene really is about that topic */
+function diagramFor(text){
+  const t = String(text || '').toLowerCase();
+  for (const key in DIAGRAMS){
+    const d = DIAGRAMS[key];
+    if (!d.match.test(t)) continue;
+    // needs two distinct organ words, so a passing mention of "stomach ache"
+    // in an unrelated lesson does not hijack the slide
+    const named = d.parts.filter(p => t.includes(p.label.toLowerCase().split(' ')[0])).length;
+    if (named >= 2 || new RegExp(key, 'i').test(t)) return { type:'figure', key, ...d };
+  }
+  return null;
+}
+
 function titleForVisual(v){
   switch (v.type){
     case 'fraction':   return 'The fraction ' + v.n + '/' + v.d;
@@ -1197,6 +1273,7 @@ function titleForVisual(v){
     case 'pie':        return 'The whole, in parts';
     case 'steps':      return 'Step by step';
     case 'cycle':      return 'Round and round';
+    case 'figure':     return v.title;
     case 'parts':      return 'Parts of ' + v.center;
     case 'timeline':   return 'Along the years';
     case 'equation':   return v.text;
@@ -1254,7 +1331,17 @@ function parseScenes(text){
       sc.title = '';
     if (!sc.title) sc.title = sc.visual ? titleForVisual(sc.visual) : 'Lesson';
     if (!sc.say && !sc.points.length && !sc.visual) continue;   // an empty line, not a scene
-    if (!visualIsRelevant(sc)) sc.visual = { type:'text', emoji: sc.emoji };
+    if (!visualIsRelevant(sc)) sc.visual = null;
+    /* A real subject diagram outranks whatever the model drew: for anatomy
+       and the like our own picture is correct and the model's is not. It also
+       rescues the scenes that previously fell through to a bare emoji. */
+    const dia = diagramFor(sc.title + ' ' + sc.say + ' ' + sc.points.join(' '));
+    if (dia && (!sc.visual || sc.visual.type === 'text')){
+      sc.visual = dia;
+      // "Part 2" is not a title, it is a placeholder — name the picture instead
+      if (!sc.title || /^(part|scene|step|slide)\s*\d+$/i.test(sc.title.trim())) sc.title = dia.title;
+    }
+    if (!sc.visual) sc.visual = { type:'text', emoji: sc.emoji };
     sc.points = sc.points.slice(0,5);
     out.push(sc);
   }
@@ -1267,13 +1354,70 @@ function sceneMarkup(s){
   const pts = s.points.length ? '<ul>' +
     s.points.map((p,i)=>'<li style="animation-delay:'+(0.3+i*0.3)+'s">'+esc(p)+'</li>').join('') + '</ul>' : '';
   const v = s.visual;
+  if (v && v.type === 'figure'){
+    try { return '<h3>'+esc(s.title)+'</h3>' + figureSVG(v) + pts; } catch(e){}
+  }
   if (v && v.type !== 'text'){
     try {
       return '<h3>'+esc(s.title)+'</h3>' +
         '<svg class="stage" viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg">'+VISUALS[v.type](v)+'</svg>' + pts;
     } catch(e){ /* fall through to the text card */ }
   }
+  /* Last resort. A bare emoji over "Part 2" told a student nothing, so the
+     card now carries the scene's own words — the key terms it is about. */
+  const terms = keyTerms(s);
+  if (terms.length)
+    return '<div class="emoji small">'+esc((v && v.emoji) || s.emoji || '📘')+'</div>' +
+           '<h3>'+esc(s.title)+'</h3>' +
+           '<div class="termcard">' + terms.map((t,i)=>
+             '<span class="term" style="animation-delay:'+(0.15+i*0.18)+'s">'+esc(t)+'</span>').join('') +
+           '</div>' + pts;
   return '<div class="emoji">'+esc((v && v.emoji) || s.emoji || '📘')+'</div><h3>'+esc(s.title)+'</h3>'+pts;
+}
+
+/* the words the scene is actually about, for the no-visual card */
+const TERM_STOP = new Set(('the a an and or of to in is are was were it its this that then than for from with '+
+  'we you your our they them he she his her as at by on so if but not no yes can will would could should '+
+  'about into over under after before when where which who what how why very more most some any each all '+
+  'part parts scene lesson explain example small large big long short first next last also called using use '+
+  'make makes made take takes get gets go goes come comes see sees look looks let us let\'s there here').split(' '));
+function keyTerms(s){
+  const seen = new Set(), out = [];
+  const src = (s.points.join(' ') + ' ' + s.say + ' ' + s.title).replace(/[^\p{L}\p{N}\s-]/gu,' ');
+  for (const raw of src.split(/\s+/)){
+    const w = raw.trim();
+    if (w.length < 4) continue;
+    const k = w.toLowerCase();
+    if (TERM_STOP.has(k) || seen.has(k) || /^\d+$/.test(k)) continue;
+    seen.add(k); out.push(w);
+    if (out.length === 12) break;
+  }
+  // names and long words carry the lesson; keep those first ("Akbar,
+  // Fatehpur, Sikri" reads as the subject — "built, grew" does not)
+  const weight = w => (/^[A-Z]/.test(w) ? 0 : 1) * 10 + Math.max(0, 9 - w.length);
+  return out.sort((a,b) => weight(a) - weight(b)).slice(0,6);
+}
+
+/* A hand-drawn subject diagram that draws itself: the silhouette settles
+   first, then each labelled part strokes on in the order the lesson follows.
+   Pure CSS delays, so it animates identically whether or not speech is on. */
+function figureSVG(f){
+  const P = f.parts.map((p,i)=>{
+    const d = 0.35 + i*0.62;
+    return '<path class="fpart'+(p.fill?' fill':'')+(p.quiet?' quiet':'')+'" d="'+p.d+'" ' +
+           'style="animation-delay:'+d+'s"><title>'+esc(p.label)+'</title></path>';
+  }).join('');
+  // each label sits on its own side with a leader line onto the organ itself
+  const L = f.parts.map((p,i)=>{
+    const d = 0.55 + i*0.62;
+    return '<g class="flabg" style="animation-delay:'+d+'s">' +
+           '<line class="flead" x1="'+p.lx+'" y1="'+p.ly+'" x2="'+p.ax+'" y2="'+p.ay+'"/>' +
+           '<text class="flab" x="'+p.lx+'" y="'+(p.ly-6)+'" text-anchor="'+(p.left?'end':'start')+'">' +
+           esc(p.label)+'</text></g>';
+  }).join('');
+  return '<svg class="stage figure" viewBox="'+f.viewBox+'" xmlns="http://www.w3.org/2000/svg" ' +
+         'role="img" aria-label="'+esc(f.title)+'">' +
+         '<g class="fbody">'+f.body+'</g>' + P + L + '</svg>';
 }
 function sceneSpeech(s){
   return s.say || (s.title + '. ' + s.points.join('. ') + (s.points.length ? '.' : ''));
