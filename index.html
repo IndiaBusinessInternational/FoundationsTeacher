@@ -263,6 +263,16 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
        border-radius:8px;color:var(--text);padding:8px 9px;font-size:12px}
 .erow .eclear{flex:0 0 auto;font-size:11px;color:var(--red);background:none;border:0;
        cursor:pointer;text-decoration:underline;padding:0}
+/* per-job engine pickers */
+.ehint{color:var(--text-3);font-weight:400}
+/* Stacked, not side-by-side: the job labels are long and this modal is read
+   on phones — a two-column row overflowed the card and forced a horizontal
+   scrollbar at ~500px wide. */
+.ejob{display:block;margin:9px 0 0}
+.ejob .ejob-l{display:block;font-size:12.5px;color:var(--text);margin-bottom:4px}
+.ejob select{width:100%}
+.ejob-note{font-size:10.5px;color:var(--text-3);line-height:1.5;margin:3px 0 6px}
+.ejob-note.warn{color:var(--amber,#fbbf24)}
 .ebtns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
 
 /* welcome */
@@ -282,7 +292,7 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
     <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
   </div>
   <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge">v4.0</span>
+  <span class="ver-badge" id="verBadge" title="v4.1 — Pick the engine per job. The teacher calls a model in exactly two places, and the best brain differs by job, so ⚙ AI engine now lets you choose one for Answers &amp; animated lessons and another for Reading a photographed question. Photos can now be read by Gemini, ChatGPT or Claude as well as the laptop's own gemma3:4b — far better on messy handwriting — and a cloud failure falls back to the laptop so a photo is never rejected outright. Auto now means best-available FOR THAT JOB: a DeepSeek key is the best answer engine but cannot see a photo, so photos stay on the laptop instead of spending a failed call. Each choice says in plain words what it will actually do, and an engine that cannot read images is never offered for photos. v4.0 — Animated video lessons ([SCENES] to self-animating SVG synced to speech) and multi-engine settings.">v4.1</span>
   <div class="spacer"></div>
   <div class="engine-pill" id="enginePill">checking engine…</div>
   <button class="engine-pill" id="engineCfg" title="AI engine settings — add a DeepSeek, Gemini, ChatGPT or Claude key" style="cursor:pointer">⚙</button>
@@ -296,7 +306,7 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
     <h2>⚙ AI engine</h2>
     <p class="esub">The teacher answers with the engine below. A cloud key gives much better
       answers and animated lessons; keys are stored only on the laptop and never leave it.</p>
-    <label for="engineSel">Engine</label>
+    <label for="engineSel">Default engine</label>
     <select id="engineSel">
       <option value="auto">Auto — best available (cloud if any key is set)</option>
       <option value="local">IBI Local — on-device, no key needed</option>
@@ -305,6 +315,21 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
       <option value="openai">ChatGPT</option>
       <option value="anthropic">Claude</option>
     </select>
+
+    <!-- Per-job choice. There are exactly two jobs because there are exactly
+         two places the teacher calls a model; anything else would be a knob
+         that changes nothing. -->
+    <label style="margin-top:14px">Choose an engine per job <span class="ehint">(leave on “default” to follow the setting above)</span></label>
+    <div class="ejob">
+      <span class="ejob-l">📚 Answers &amp; animated lessons</span>
+      <select id="engineChat" data-purpose="chat"></select>
+    </div>
+    <div class="ejob-note" id="chatNote"></div>
+    <div class="ejob">
+      <span class="ejob-l">📷 Reading a photographed question</span>
+      <select id="engineVision" data-purpose="vision"></select>
+    </div>
+    <div class="ejob-note" id="visionNote"></div>
     <label>API keys (paste to set — leave blank to keep the saved one)</label>
     <div id="engineRows"></div>
     <div class="ebtns">
@@ -1879,6 +1904,65 @@ document.getElementById('clearChat').addEventListener('click', () => {
       rows.appendChild(row);
     }
   }
+  /* Per-job pickers. Options are built from the server's own capability map,
+     so an engine that cannot read a photo is never silently offered for one. */
+  const jobSel = { chat: document.getElementById('engineChat'),
+                   vision: document.getElementById('engineVision') };
+  const jobNote = { chat: document.getElementById('chatNote'),
+                    vision: document.getElementById('visionNote') };
+  const LABEL = { local:'IBI Local (on this laptop)', deepseek:'DeepSeek', gemini:'Gemini',
+                  openai:'ChatGPT', anthropic:'Claude' };
+
+  function buildJobs(cfg){
+    for (const p of ['chat','vision']){
+      const s = jobSel[p];
+      s.innerHTML = '';
+      const def = document.createElement('option');
+      def.value = ''; def.textContent = 'Use the default above';
+      s.appendChild(def);
+      for (const id of ['local','deepseek','gemini','openai','anthropic']){
+        // A cloud engine with no key can't be honoured; say so rather than
+        // letting the choice silently fall back to local later.
+        const keyless = id !== 'local' && !cfg.configured[id];
+        const blind = p === 'vision' && id !== 'local' && !cfg.visionCapable[id];
+        if (blind) continue;                       // cannot see — don't offer it
+        const o = document.createElement('option');
+        o.value = id;
+        o.textContent = LABEL[id] + (keyless ? ' — no key saved' : '') +
+          (p === 'vision' && cfg.visionCapable[id] === 'unverified' ? ' — may not read photos' : '');
+        s.appendChild(o);
+      }
+      s.value = (cfg.engineFor && cfg.engineFor[p]) || '';
+      jobNote[p].textContent = '';
+    }
+    describe(cfg);
+  }
+
+  /* Say plainly what each job will really use, after keys and capability. */
+  function describe(cfg){
+    const local = (p) => p === 'vision'
+      ? 'IBI Local — ' + (cfg.localVisionModel || 'gemma3:4b') + ' on this laptop, free and private'
+      : 'IBI Local — ' + (cfg.localModel || 'qwen3') + ' on this laptop, free and private';
+    for (const p of ['chat','vision']){
+      const picked = jobSel[p].value;
+      const eff = picked || cfg.engine || 'auto';
+      const note = jobNote[p];
+      note.classList.remove('warn');
+      if (picked && picked !== 'local' && !cfg.configured[picked]){
+        note.textContent = 'No ' + LABEL[picked] + ' key saved yet — paste one below, or this job falls back to the laptop.';
+        note.classList.add('warn');
+      } else if (eff === 'local'){
+        note.textContent = 'Will use ' + local(p) + '.';
+        if (p === 'chat') note.textContent += ' Animated lessons come out better on a cloud engine.';
+      } else if (picked){
+        note.textContent = 'Will use ' + LABEL[picked] + '.';
+      } else {
+        note.textContent = 'Follows the default: ' + (cfg.activeFor && cfg.activeFor[p] ?
+          (cfg.activeFor[p] === 'local' ? local(p) : LABEL[cfg.activeFor[p]]) : 'auto') + '.';
+      }
+    }
+  }
+
   let lastCfg = null;
   function openModal(){
     fetch('/api/engine-config').then(r=>r.json()).then(cfg => {
@@ -1886,9 +1970,13 @@ document.getElementById('clearChat').addEventListener('click', () => {
       for (const k in clearing) delete clearing[k];
       sel.value = cfg.engine || 'auto';
       buildRows(cfg);
+      buildJobs(cfg);
       modal.hidden = false;
     }).catch(()=>alert('Could not load engine settings — is the teacher server reachable?'));
   }
+  for (const p of ['chat','vision'])
+    jobSel[p].addEventListener('change', () => { if (lastCfg) describe(lastCfg); });
+  sel.addEventListener('change', () => { if (lastCfg) describe(lastCfg); });
   rows.addEventListener('click', e => {
     const b = e.target.closest('.eclear');
     if (!b) return;
@@ -1906,7 +1994,11 @@ document.getElementById('clearChat').addEventListener('click', () => {
     });
     for (const id in clearing) if (clearing[id] && !keys[id]) keys[id] = '';
     fetch('/api/engine-config', { method:'POST', headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ engine: sel.value, keys }) })
+      body: JSON.stringify({
+        engine: sel.value,
+        engineFor: { chat: jobSel.chat.value, vision: jobSel.vision.value },
+        keys,
+      }) })
       .then(r => r.json())
       .then(() => { modal.hidden = true; refreshStatus(); })
       .catch(() => alert('Could not save — is the teacher server reachable?'));
