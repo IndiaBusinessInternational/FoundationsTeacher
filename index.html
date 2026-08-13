@@ -174,6 +174,24 @@ main{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;
       font-family:inherit;paint-order:stroke;stroke:rgba(0,0,0,.5);stroke-width:3}
 @media(max-width:600px){ .flab{font-size:19px} }
 
+/* ---- the real textbook page, rendered by pdf.js ----
+   White card on purpose: it is a page from a printed book, and inverting it
+   would misrepresent the figure's own colours. */
+.bookpage{position:relative;margin:6px auto 0;max-width:min(100%,900px);min-height:130px;
+   border-radius:12px;overflow:hidden;background:#fff;border:1px solid rgba(255,255,255,.2);
+   box-shadow:0 12px 34px rgba(0,0,0,.45)}
+.bookpage canvas{display:block;width:100%;height:auto}
+/* a slow drift across the page so the figure is "explained with animation"
+   rather than sitting there as a flat scan */
+.bookpage.ready canvas{transform-origin:50% 34%;animation:kenburns 16s ease-in-out both}
+@keyframes kenburns{0%{transform:scale(1)}55%{transform:scale(1.13) translateY(-2.5%)}100%{transform:scale(1.06) translateY(-1%)}}
+.bookpage .bp-note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+   text-align:center;padding:16px;font-size:12.5px;color:#4b3f6b;background:#fff}
+.bookpage.failed{background:rgba(255,255,255,.05);box-shadow:none;min-height:0}
+.bookpage.failed .bp-note{position:static;background:none;color:var(--text-3)}
+.bp-cap{text-align:center;font-size:11.5px;color:var(--text-3);margin:6px 0 2px}
+@media(prefers-reduced-motion:reduce){ .bookpage.ready canvas{animation:none} }
+
 /* no-visual card: the scene's own key words instead of a bare emoji */
 .emoji.small{font-size:34px}
 .termcard{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px auto 2px;max-width:640px}
@@ -1214,6 +1232,105 @@ function visualIsRelevant(sc){
   }
   return true;
 }
+/* ==================== the real textbook page ====================
+   A drawn diagram is ours; this is the student's own book. The answer already
+   cites the exact chapter PDF and page, so pdf.js renders that page and the
+   lesson opens on the real NCERT figure before explaining it.
+
+   pdf.js rather than pulling the embedded JPEGs out of the PDF: those streams
+   carry no page mapping (no way to tell the digestive system from a border
+   illustration) and are CMYK, so they come out colour-inverted. pdf.js
+   resolves colour spaces, masks and vector art properly.
+
+   Loaded on demand and allowed to fail: if the CDN is unreachable the lesson
+   still plays with its drawn diagrams. */
+let pdfjsP = null;
+function pdfjs(){
+  if (pdfjsP) return pdfjsP;
+  const B = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  pdfjsP = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = B + 'pdf.min.js';
+    s.onload = () => {
+      const lib = window.pdfjsLib;
+      if (!lib) return rej(new Error('pdf.js missing'));
+      lib.GlobalWorkerOptions.workerSrc = B + 'pdf.worker.min.js';
+      res(lib);
+    };
+    s.onerror = () => rej(new Error('pdf.js unreachable'));
+    document.head.appendChild(s);
+  });
+  return pdfjsP;
+}
+const pdfDocs = new Map();          // one fetch per chapter, reused across scenes
+function bookDoc(lib, cls, file){
+  const k = cls + '|' + file;
+  if (!pdfDocs.has(k))
+    pdfDocs.set(k, lib.getDocument({
+      url: '/api/book?class=' + encodeURIComponent(cls) + '&file=' + encodeURIComponent(file),
+    }).promise.catch(e => { pdfDocs.delete(k); throw e; }));
+  return pdfDocs.get(k);
+}
+/* pdf.js paints on animation frames, and a hidden tab gets none — a student
+   who switches away mid-render would come back to a stuck "Opening…" note
+   forever. Wait for the tab to be visible before painting, and the render
+   simply completes when they return. */
+function whenVisible(){
+  if (!document.hidden) return Promise.resolve();
+  return new Promise(res => {
+    const h = () => { if (!document.hidden){ document.removeEventListener('visibilitychange', h); res(); } };
+    document.addEventListener('visibilitychange', h);
+  });
+}
+/* fills in every book page on the slide that has just been inserted */
+async function hydrateBookPages(root){
+  const hosts = root.querySelectorAll('.bookpage:not([data-done])');
+  for (const host of hosts){
+    host.dataset.done = '1';
+    const note = host.querySelector('.bp-note');
+    try {
+      const lib = await pdfjs();
+      const doc = await bookDoc(lib, host.dataset.cls, host.dataset.file);
+      const n = Math.min(Math.max(1, parseInt(host.dataset.page, 10) || 1), doc.numPages);
+      const page = await doc.getPage(n);
+      const base = page.getViewport({ scale: 1 });
+      // render at the slide's own width (min 560 so small phones stay legible)
+      const targetW = Math.min(1100, Math.max(560, host.clientWidth || 760));
+      const vp = page.getViewport({ scale: targetW / base.width });
+      const cv = host.querySelector('canvas');
+      cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+      await whenVisible();
+      await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      if (note) note.remove();
+      host.classList.add('ready');
+    } catch (e){
+      // never a blank frame: say what happened, the citation still stands
+      host.classList.add('failed');
+      if (note) note.textContent = 'Could not open the book page on this device — the source below still says exactly where to look.';
+    }
+  }
+}
+/* Put the real page in the lesson: after the opening scene, so the student is
+   introduced, sees the actual book, then gets it explained. */
+function withBookPage(scenes, sources){
+  if (!scenes || !scenes.length || !sources || !sources.length) return scenes;
+  const s = sources.find(x => x && x.file && x.page);
+  if (!s) return scenes;
+  if (scenes.some(sc => sc.visual && sc.visual.type === 'page')) return scenes;
+  const where = [s.subject, s.book].filter(Boolean).join(' · ');
+  const sc = {
+    title: 'In your own textbook',
+    visual: { type:'page', cls:s.class, file:s.file, page:s.page,
+              caption:'Class ' + s.class + (where ? ' · ' + where : '') +
+                      ' · ' + (s.chapter || '') + ', page ' + s.page },
+    say: 'This is the actual page from your Class ' + s.class + ' ' + (s.subject || '') +
+         ' book' + (s.chapter ? ', ' + s.chapter : '') + '. Look at the picture while I explain it.',
+    points: [], emoji:'📖',
+  };
+  const at = Math.min(1, scenes.length);
+  return scenes.slice(0, at).concat([sc], scenes.slice(at)).slice(0, 11);
+}
+
 /* ==================== real subject diagrams ====================
    Small models cannot draw anatomy, and when their visual is rejected the
    scene used to fall back to a bare emoji — a lightbulb captioned "Part 2"
@@ -1354,6 +1471,14 @@ function sceneMarkup(s){
   const pts = s.points.length ? '<ul>' +
     s.points.map((p,i)=>'<li style="animation-delay:'+(0.3+i*0.3)+'s">'+esc(p)+'</li>').join('') + '</ul>' : '';
   const v = s.visual;
+  if (v && v.type === 'page'){
+    // the canvas is filled in by hydrateBookPages once this is in the DOM
+    return '<h3>'+esc(s.title)+'</h3>' +
+      '<div class="bookpage" data-cls="'+esc(String(v.cls))+'" data-file="'+esc(v.file)+'" ' +
+      'data-page="'+esc(String(v.page))+'"><canvas></canvas>' +
+      '<div class="bp-note">Opening your textbook page…</div></div>' +
+      '<div class="bp-cap">'+esc(v.caption || '')+'</div>' + pts;
+  }
   if (v && v.type === 'figure'){
     try { return '<h3>'+esc(s.title)+'</h3>' + figureSVG(v) + pts; } catch(e){}
   }
@@ -1499,6 +1624,7 @@ function renderScenes(container, scenes){
     if (want === cur) return;                  // don't restart the animation
     cur = want;
     slideEl.innerHTML = sceneMarkup(scenes[cur]);
+    hydrateBookPages(slideEl);           // real textbook pages draw themselves in
     dots.querySelectorAll('i').forEach((d,i)=>d.classList.toggle('on', i===cur));
     counter.textContent = ' ' + (cur+1) + ' / ' + scenes.length;
     deck.querySelector('.prev').disabled = cur===0;
@@ -1775,9 +1901,11 @@ function sourceChips(list){
 
 /* an answer's interactive parts (deck + play buttons) — used for live
    answers AND for chats restored from storage */
-function wireAnswer(extra, explain, scenes){
+function wireAnswer(extra, explain, scenes, sources){
   // an answer must never arrive without its animated lesson
   if ((!scenes || !scenes.length) && explain) scenes = scenesFromExplain(explain);
+  // ...and when the answer cites a real book page, the lesson shows it
+  scenes = withBookPage(scenes, sources);
   let deckApi = null;
   if (scenes && scenes.length) deckApi = renderScenes(extra, scenes);
   const acts = document.createElement('div');
@@ -2003,7 +2131,7 @@ function ask(){
     const tail = si !== -1 ? raw.slice(si + 8).replace(/\[END\][\s\S]*$/,'') : '';
     const scenes = sci !== -1 ? parseScenes(tail)
                  : sli !== -1 ? slidesToScenes(parseSlides(tail)) : [];
-    wireAnswer(extra, explain, scenes);
+    wireAnswer(extra, explain, scenes, srcData);
     saveChat({ q: question || '📷 (photo question)', photo: photoThumbSmall,
       ocr: ocrText.slice(0, 1000), explain, scenes, sources: srcData, ts: Date.now() });
     scrollDown();
@@ -2029,7 +2157,8 @@ function ask(){
     bot.querySelector('.body').innerHTML = md(rec.explain || '');
     // old saved chats hold "slides"; new ones hold "scenes" — both replay
     wireAnswer(bot.querySelector('.extra'), rec.explain || '',
-      (rec.scenes && rec.scenes.length) ? rec.scenes : slidesToScenes(rec.slides || []));
+      (rec.scenes && rec.scenes.length) ? rec.scenes : slidesToScenes(rec.slides || []),
+      rec.sources);
     feed.appendChild(bot);
   }
   for (const rec of past.slice(-3)){
