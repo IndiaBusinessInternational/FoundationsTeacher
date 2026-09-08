@@ -2,9 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IBI Skilled Foundations Teacher</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👩‍🏫</text></svg>">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7F00FF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="Your friendly AI teacher — every NCERT concept from Class 1 to 12, explained simply.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="India Business International">
@@ -18,163 +23,195 @@
 <meta name="twitter:title" content="IBI Skilled Foundations Teacher">
 <meta name="twitter:description" content="Your friendly AI teacher — every NCERT concept from Class 1 to 12, explained simply.">
 <meta name="twitter:image" content="https://teacher.indiabusinessinternational.online/og-banner.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800&display=swap">
 <style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   v5.0 design system — a LIGHT learning surface (paper white, IBI violet as
+   the one accent, gold only inside lessons), dark mode as a setting that
+   follows the phone. Nunito at 16px body; nothing under 12px anywhere; every
+   tap target ≥ 44px; floating panels rounded, full-bleed bars square.
+   The lesson player is DARK in both themes on purpose — like every video
+   player on a light page — so the self-drawing SVG lessons keep their ink.
+   ═══════════════════════════════════════════════════════════════════════════ */
 :root{
-  --violet:#7F00FF; --violet-2:#a855f7; --bg:#14102a; --bg-2:#1d1640; --card:#231b4a;
-  --card-2:#2b2158; --text:#efeaff; --text-2:#c4b8e8; --text-3:#8d7cb0; --gold:#e8b64c;
-  --green:#34d399; --red:#f87171; --radius:16px;
+  --violet:#7F00FF; --violet-2:#a855f7; --violet-soft:#efe6ff; --violet-ink:#5b21b6;
+  --bg:#f4f1fb; --surface:#ffffff; --surface-2:#f7f4fd; --border:#e4def3; --border-2:#d3cbea;
+  --text:#1b1633; --text-2:#4f4769; --text-3:#7a7195;
+  --gold:#a8720a; --gold-soft:#fff5dc; --green:#0f9f6e; --green-soft:#e3f8ef; --red:#c8324b; --red-soft:#fde8ec;
+  --amber:#b7791f; --amber-soft:#fff3d6;
+  --shadow:0 10px 30px rgba(60,30,120,.10); --shadow-2:0 2px 10px rgba(60,30,120,.08);
+  --radius:16px; --radius-2:12px; --side:264px; --ts:1;
+  color-scheme:light;
+}
+html[data-theme="dark"]{
+  --violet-soft:#2a1d55; --violet-ink:#d8c4ff;
+  --bg:#14102a; --surface:#1e1840; --surface-2:#251d4c; --border:rgba(255,255,255,.10); --border-2:rgba(255,255,255,.18);
+  --text:#efeaff; --text-2:#c4b8e8; --text-3:#8d7cb0;
+  --gold:#e8b64c; --gold-soft:rgba(232,182,76,.12); --green:#34d399; --green-soft:rgba(52,211,153,.14);
+  --red:#ff8fa3; --red-soft:rgba(248,113,113,.14); --amber:#fbbf24; --amber-soft:rgba(251,191,36,.12);
+  --shadow:0 10px 30px rgba(0,0,0,.35); --shadow-2:0 2px 10px rgba(0,0,0,.3);
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:
-     radial-gradient(1200px 600px at 80% -10%,rgba(127,0,255,.25),transparent),
-     linear-gradient(170deg,var(--bg),var(--bg-2));color:var(--text);min-height:100vh}
-header{display:flex;align-items:center;gap:12px;padding:12px 18px;position:sticky;top:0;z-index:40;
-       background:rgba(20,16,42,.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.07)}
-.logo{width:34px;height:34px;flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:3px;
-      background:linear-gradient(135deg,var(--violet),var(--violet-2));border-radius:9px}
-.logo i{background:#fff;border-radius:50%;opacity:.92}
-h1{font-size:16.5px;margin:0;font-weight:700;letter-spacing:.2px;line-height:1.25}
-h1 small{display:block;font-size:10.5px;font-weight:500;color:var(--text-3);letter-spacing:.4px}
-.ver-badge{font-size:10px;font-weight:700;color:#fff;background:linear-gradient(90deg,var(--violet),var(--violet-2));
-           border-radius:20px;padding:3px 9px;margin-left:2px;flex:0 0 auto}
-.spacer{flex:1}
-.engine-pill{font-size:11px;color:var(--text-2);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-             border-radius:20px;padding:5px 11px;white-space:nowrap}
-.engine-pill b{color:var(--green);font-weight:600}
-.engine-pill.off b{color:var(--red)}
-/* second engine shown only when the photo job runs somewhere else */
-.pill-photo{margin-left:7px;padding-left:7px;border-left:1px solid rgba(255,255,255,.18);
-            color:var(--text-2);font-weight:600}
-@media(max-width:600px){ .pill-photo{display:none} }
-/* Use the screen. This was capped at 1150px, which threw away ~40% of the
-   width of an ordinary laptop screen and left the lesson panel small. The cap
-   is now high enough to fill a 1920 display (with breathing room at the
-   edges); readability is protected where it actually matters — on the prose
-   messages — rather than by starving the whole layout. */
-main{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;
-     max-width:1720px;margin:0 auto;padding:18px}
-/* the teacher panel is a fixed cost — give the chat more of a small laptop */
-@media(max-width:1240px){ main{grid-template-columns:290px minmax(0,1fr);gap:14px} }
-@media(max-width:860px){ main{grid-template-columns:1fr;gap:12px;padding:10px} .teacher-col{order:-1} }
-@media(max-width:600px){ main{padding:8px;gap:10px} }
+html,body{margin:0;padding:0;height:100%}
+body{font-family:Nunito,'Segoe UI',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.55;
+     background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow:hidden}
+button,select,input,textarea{font-family:inherit;font-size:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid rgba(127,0,255,.35);outline-offset:2px}
+.skip{position:absolute;left:-999px;top:8px;background:var(--violet);color:#fff;padding:8px 12px;border-radius:8px;z-index:9999}
+.skip:focus{left:8px}
+[hidden]{display:none!important}
 
-/* ---------------- teacher panel ---------------- */
-.teacher-col{position:relative}
-.teacher-card{background:linear-gradient(180deg,var(--card),var(--card-2));border:1px solid rgba(255,255,255,.09);
-              border-radius:var(--radius);padding:18px;text-align:center;position:sticky;top:74px}
-@media(max-width:860px){
-  .teacher-card{position:static;display:flex;align-items:center;gap:14px;text-align:left;padding:12px 14px}
-  .teacher-card svg{width:96px;height:96px}
-  .teacher-card .avatar-wrap{flex:0 0 auto}
-  /* ⚠ .photo-canvas must be listed too. The visible avatar is the CANVAS, not
-     the <img> — naming only #teacherPhoto left it at its 210px desktop size on
-     phones, so the teacher card ate ~240px of screen before any answer showed. */
-  .teacher-card #teacherPhoto,.teacher-card .photo-canvas{width:96px;height:96px}
-  .teacher-card .tname{margin-top:0}
-}
-.teacher-card svg{width:210px;height:210px;max-width:100%}
-/* aspect-ratio + height:auto keep the photo a perfect circle even when a
-   narrow flex layout clamps its width (it rendered oval on phones otherwise) */
-#teacherPhoto,.photo-canvas{display:none;width:210px;max-width:100%;aspect-ratio:1/1;height:auto;border-radius:50%;
-              object-fit:cover;object-position:top;
-              border:3px solid var(--gold);box-shadow:0 0 0 6px rgba(232,182,76,.15),0 8px 28px rgba(0,0,0,.35)}
-#teacherPhoto.ok,.photo-canvas.ok{display:inline-block}
-.speaking #teacherPhoto,.speaking .photo-canvas{
-              box-shadow:0 0 0 7px rgba(52,211,153,.25),0 0 26px rgba(52,211,153,.35)}
-/* animated-video mode inside full-screen lessons: Sastika in a corner bubble
-   speaking in sync, with live subtitles above the controls */
-.fs-teacher,.fs-subtitle{display:none}
-.deck.fs .fs-teacher{display:block;position:absolute;right:16px;bottom:calc(86px + env(safe-area-inset-bottom));
-              width:min(26vmin,190px);aspect-ratio:1/1;border-radius:50%;z-index:6;
-              border:2px solid var(--gold);box-shadow:0 0 0 6px rgba(232,182,76,.12),0 10px 30px rgba(0,0,0,.5);
-              background:#1a1339}
-.deck.fs .fs-subtitle{display:block;position:absolute;left:50%;transform:translateX(-50%);
-              bottom:calc(88px + env(safe-area-inset-bottom));max-width:72%;z-index:5;
-              background:rgba(0,0,0,.55);border-radius:10px;padding:8px 14px;font-size:clamp(13px,2.2vw,19px);
-              line-height:1.5;color:#fff;text-align:center;max-height:5em;overflow:hidden}
-.deck.fs .fs-subtitle:empty{display:none}
-/* while subtitles are showing, reserve room so the slide's points never
-   sit underneath the caption box */
-.deck.fs:has(.fs-subtitle:not(:empty)) .slide{padding-bottom:calc(160px + env(safe-area-inset-bottom))}
-@media(max-width:700px){ .deck.fs .fs-teacher{bottom:auto;top:56px;right:12px;width:22vmin} }
-.tname{font-size:16px;font-weight:700;margin-top:10px;color:var(--gold)}
-.trole{font-size:12px;color:var(--text-2);margin-top:3px;line-height:1.5}
-.tstatus{font-size:11.5px;margin-top:10px;color:var(--text-3);min-height:16px}
-.tstatus.speaking{color:var(--green)}
-#voiceSel{margin-top:9px;max-width:100%;font-size:11px;color:var(--text-2);background:rgba(0,0,0,.25);
-          border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:5px 7px;color-scheme:dark}
-#voiceSel option{color:#efeaff;background:#231b4a}
-.avatar-wrap{display:inline-block;animation:breathe 4.2s ease-in-out infinite;transform-origin:50% 90%}
+/* ---------------- app shell: sidebar + views ---------------- */
+.app{display:grid;grid-template-columns:var(--side) minmax(0,1fr);height:100dvh;width:100%}
+.side{display:flex;flex-direction:column;background:var(--surface);border-right:1px solid var(--border);
+      padding:14px 12px calc(12px + env(safe-area-inset-bottom));min-height:0}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 6px 14px;min-width:0}
+.logo{width:38px;height:38px;flex:0 0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;padding:4px;
+      background:linear-gradient(135deg,var(--violet),var(--violet-2));border-radius:11px}
+.logo i{background:#fff;border-radius:50%;opacity:.92}
+.logo i:nth-child(even){opacity:.35}
+.brand-t{min-width:0;flex:1}
+.brand-t h1{font-size:15px;margin:0;font-weight:800;line-height:1.2;letter-spacing:.1px}
+.brand-t small{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--text-3);margin-top:3px;white-space:nowrap}
+.ver-badge{font-size:12px;font-weight:800;color:#fff;background:linear-gradient(90deg,var(--violet),var(--violet-2));
+           border-radius:20px;padding:1px 8px;flex:0 0 auto;line-height:1.5;cursor:help}
+.newq{display:flex;align-items:center;justify-content:center;gap:8px;margin:2px 4px 12px;min-height:46px;border:0;border-radius:var(--radius-2);
+      background:linear-gradient(90deg,var(--violet),var(--violet-2));color:#fff;font-weight:800;font-size:15px;
+      box-shadow:0 6px 18px rgba(127,0,255,.25)}
+.newq:hover{filter:brightness(1.06)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:12px;width:100%;min-height:46px;padding:0 12px;border:0;border-radius:var(--radius-2);
+            background:none;color:var(--text-2);font-weight:700;font-size:15px;text-align:left}
+.nav button svg{width:22px;height:22px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav button:hover{background:var(--surface-2);color:var(--text)}
+.nav button.on{background:var(--violet-soft);color:var(--violet-ink)}
+.side-spacer{flex:1}
+.side-foot{padding:10px 6px 0;border-top:1px solid var(--border);font-size:13px;color:var(--text-3);line-height:1.5}
+.engine-pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--text-2);
+             background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:5px 11px;max-width:100%;white-space:nowrap;overflow:hidden}
+.engine-pill b{color:var(--green);font-weight:800}
+.engine-pill .dot{width:9px;height:9px;border-radius:50%;background:var(--green);flex:0 0 auto}
+.engine-pill.off b{color:var(--red)}
+.engine-pill.off .dot{background:var(--red)}
+.pill-photo{margin-left:6px;padding-left:6px;border-left:1px solid var(--border-2);font-weight:700}
+.side-foot .foot-l{display:block;margin-top:8px;font-size:12px}
+
+.views{min-width:0;min-height:0;display:flex;flex-direction:column;position:relative}
+.view{display:none;min-height:0;flex:1;flex-direction:column}
+.view.on{display:flex}
+.vhead{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border);background:var(--surface);min-height:66px}
+.vhead h2{font-size:19px;margin:0;font-weight:800}
+.vhead p{margin:0;font-size:14px;color:var(--text-3)}
+.vbody{flex:1;min-height:0;overflow-y:auto;padding:20px;scroll-behavior:smooth}
+.vbody > .inner{max-width:980px;margin:0 auto}
+
+/* ---------------- the tutor (S. Sastika) ---------------- */
+.tutor{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.avatar-wrap{display:inline-block;position:relative;flex:0 0 auto;animation:breathe 4.2s ease-in-out infinite;transform-origin:50% 90%}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.012)}}
+#teacherPhoto,.photo-canvas{display:none;width:48px;aspect-ratio:1/1;height:auto;border-radius:50%;object-fit:cover;object-position:top;
+              border:2px solid var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
+#teacherPhoto.ok,.photo-canvas.ok{display:inline-block}
+.tutor svg{width:48px;height:48px;display:block}
+.speaking .photo-canvas,.speaking #teacherPhoto{box-shadow:0 0 0 4px var(--green-soft),0 0 18px rgba(52,211,153,.45)}
+.tname{font-size:16px;font-weight:800;line-height:1.2}
+.trole{font-size:13px;color:var(--text-3);font-weight:600}
+.tstatus{font-size:13px;color:var(--text-3);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tstatus.speaking{color:var(--green)}
+.tutor-t{min-width:0}
 .head-group{transform-origin:110px 118px;transition:transform .6s ease}
 .speaking .head-group{animation:nod 2.6s ease-in-out infinite}
 @keyframes nod{0%,100%{transform:rotate(0)}30%{transform:rotate(1.6deg)}70%{transform:rotate(-1.2deg)}}
+/* the hero portrait on the empty state: same live canvas, bigger */
+.hero-avatar .photo-canvas,.hero-avatar #teacherPhoto{width:132px;border-width:3px;box-shadow:0 0 0 6px var(--gold-soft),var(--shadow)}
+.hero-avatar svg{width:132px;height:132px}
 
-/* ---------------- chat ---------------- */
-.chat-col{display:flex;flex-direction:column;min-width:0}
-#feed{flex:1;display:flex;flex-direction:column;gap:14px;padding-bottom:14px}
-/* Prose gets a reading-width cap of its own. A very wide window should give
-   you a bigger lesson and a bigger composer — not 1300px-long lines of text,
-   which are genuinely harder to read than the narrow layout was. */
-.msg{max-width:min(92%,880px);border-radius:var(--radius);padding:13px 16px;font-size:14.5px;line-height:1.62;
+/* ---------------- Ask view: feed + composer ---------------- */
+.feed{flex:1;min-height:0;overflow-y:auto;padding:18px 20px 12px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.feed > *{max-width:1100px;width:100%;margin-inline:auto}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:26px 8px 8px;animation:pop .3s ease}
+body.has-chat .empty{display:none}
+.empty h2{margin:12px 0 2px;font-size:26px;font-weight:800}
+.empty p{margin:0;font-size:16px;color:var(--text-2);max-width:620px}
+.starters{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;width:100%;max-width:900px;margin-top:20px;text-align:left}
+.stgroup{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 12px 8px;box-shadow:var(--shadow-2)}
+.stgroup h4{margin:0 0 6px;font-size:13px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--text-3);display:flex;align-items:center;gap:6px}
+.hint{display:block;width:100%;text-align:left;font-size:15px;font-weight:600;color:var(--text);background:none;border:0;border-radius:10px;
+      padding:9px 8px;line-height:1.35;min-height:44px}
+.hint:hover{background:var(--violet-soft);color:var(--violet-ink)}
+.msg{max-width:min(96%,900px);border-radius:var(--radius);padding:14px 18px;font-size:16px;line-height:1.6;
      animation:pop .25s ease;overflow-wrap:break-word}
-@media(max-width:600px){ .msg{max-width:97%;padding:11px 13px} }
 @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.msg.user{align-self:flex-end;background:linear-gradient(135deg,#6d28d9,#8b5cf6);color:#fff;border-bottom-right-radius:5px}
-.msg.bot{align-self:flex-start;background:var(--card);border:1px solid rgba(255,255,255,.08);border-bottom-left-radius:5px;width:92%}
-.msg.bot .who{font-size:11px;font-weight:700;color:var(--gold);letter-spacing:.3px;margin-bottom:6px}
-.msg .body :is(p,ul,ol){margin:.45em 0} .msg .body ul,.msg .body ol{padding-left:1.3em}
-.msg .body h1,.msg .body h2,.msg .body h3{font-size:1.02em;margin:.7em 0 .3em;color:var(--gold)}
-.msg .body code{background:rgba(0,0,0,.3);border-radius:5px;padding:1px 5px;font-size:.92em}
-.msg .body pre{background:rgba(0,0,0,.32);border-radius:9px;padding:10px 12px;overflow-x:auto}
-.msg .body pre code{background:none;padding:0}
-.msg .body strong{color:#fff}
-.sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.chip{font-size:10.5px;color:var(--text-2);background:rgba(127,0,255,.16);border:1px solid rgba(168,85,247,.3);
-      border-radius:14px;padding:3px 9px}
-.actions{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
-.abtn{font-size:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:var(--text);
-      border-radius:9px;padding:6px 12px;cursor:pointer;transition:.15s}
-.abtn:hover{background:rgba(255,255,255,.12)}
-.abtn.primary{background:linear-gradient(90deg,var(--violet),var(--violet-2));border-color:transparent;font-weight:600}
-/* Every message can be copied — the question you asked and the answer you got */
-.msgtools{display:flex;justify-content:flex-end;margin-top:8px}
+.urow{display:flex;justify-content:flex-end}
+.msg.user{background:var(--violet-soft);color:var(--text);border-bottom-right-radius:6px;max-width:min(88%,720px)}
+.msg.bot{align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:6px;box-shadow:var(--shadow-2);width:100%;max-width:100%}
+.msg.bot .who{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--violet-ink);letter-spacing:.3px;margin-bottom:8px}
+.msg.bot .who::before{content:"";width:26px;height:26px;border-radius:50%;background:url(teacher-photo.png) center top/cover,var(--violet-soft);
+     border:1.5px solid var(--gold);flex:0 0 auto}
+.msg .body :is(p,ul,ol){margin:.5em 0} .msg .body ul,.msg .body ol{padding-left:1.4em}
+.msg .body h1,.msg .body h2,.msg .body h3{font-size:1.05em;margin:.9em 0 .3em;color:var(--violet-ink);font-weight:800}
+.msg .body code{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:1px 6px;font-size:.92em}
+.msg .body pre{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;overflow-x:auto}
+.msg .body pre code{background:none;border:0;padding:0}
+.msg .body strong{color:var(--text);font-weight:800}
+.sources{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chip{font-size:13px;font-weight:700;color:var(--violet-ink);background:var(--violet-soft);border:1px solid transparent;border-radius:14px;padding:4px 11px}
+.actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.abtn{font-size:14px;font-weight:700;border:1px solid var(--border-2);background:var(--surface);color:var(--text);
+      border-radius:var(--radius-2);padding:9px 14px;min-height:44px;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.abtn:hover{background:var(--surface-2)}
+.abtn.primary{background:linear-gradient(90deg,var(--violet),var(--violet-2));border-color:transparent;color:#fff;font-weight:800}
+.msgtools{display:flex;justify-content:flex-end;margin-top:6px}
 .copyi{display:inline-flex;align-items:center;gap:6px}
-.copyi svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-.copyq{font-size:11.5px;font-weight:600;font-family:inherit;color:#fff;cursor:pointer;transition:.15s;
-       border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.13);border-radius:8px;padding:5px 9px;opacity:.85}
-.copyq:hover{opacity:1;background:rgba(255,255,255,.26)}
-.copyi.done{background:rgba(16,185,129,.32)!important;border-color:rgba(16,185,129,.6);opacity:1}
-/* ...and each part of an answer can be copied on its own. The button FLOATS,
-   so it only shortens the first line instead of gutter-ing the whole block. */
+.copyi svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.copyq{font-size:13px;font-weight:700;color:var(--violet-ink);border:0;background:none;border-radius:8px;padding:6px 8px;min-height:36px;opacity:.85}
+.copyq:hover{opacity:1;background:rgba(127,0,255,.1)}
+.copyi.done{color:var(--green)!important}
 .asec::after{content:"";display:table;clear:both}
-.seccopy{float:right;margin:1px 0 4px 12px;font-size:11px;font-weight:600;font-family:inherit;
-         color:var(--text-2);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);
-         border-radius:8px;padding:4px 8px;cursor:pointer;opacity:.7;transition:.15s}
-.seccopy:hover{opacity:1;background:rgba(255,255,255,.15);color:var(--text)}
-@media(max-width:600px){ .seccopy span{display:none} .seccopy{padding:4px 6px} }
+.seccopy{float:right;margin:2px 0 4px 12px;font-size:13px;font-weight:700;color:var(--text-3);background:var(--surface-2);
+         border:1px solid var(--border);border-radius:8px;padding:5px 9px;min-height:32px;opacity:.85;transition:.15s}
+.seccopy:hover{opacity:1;color:var(--text)}
 .typing{display:inline-flex;gap:4px;align-items:center;padding:4px 0}
-.typing i{width:6px;height:6px;border-radius:50%;background:var(--text-3);animation:blinkdot 1.2s infinite}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--text-3);animation:blinkdot 1.2s infinite}
 .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
 @keyframes blinkdot{0%,80%,100%{opacity:.25}40%{opacity:1}}
-.errline{color:var(--red);font-size:13px}
-.slidenote{margin-top:12px;padding:10px 14px;border-radius:12px;font-size:12.5px;color:var(--gold);
-           background:rgba(232,182,76,.08);border:1px dashed rgba(232,182,76,.4);animation:pop .25s ease}
-.slidenote b{color:#fff}
+.errline{color:var(--red);font-size:15px;font-weight:600}
+.slidenote{margin-top:12px;padding:10px 14px;border-radius:12px;font-size:14px;font-weight:600;color:var(--gold);
+           background:var(--gold-soft);border:1px dashed var(--gold);animation:pop .25s ease}
+.slidenote b{color:var(--text)}
 .slidenote .typing i{background:var(--gold)}
+.msg.user img.qphoto{display:block;max-width:180px;max-height:180px;border-radius:10px;margin-top:8px}
+.ocrline{font-size:14px;font-weight:600;color:var(--text-2);background:var(--gold-soft);border:1px solid var(--gold);border-radius:10px;padding:8px 11px;margin:0 0 10px}
 
-/* ---------------- animated lesson (scenes) ---------------- */
-/* Each scene is an SVG picture that draws itself: lines trace in, bars grow,
-   labels pop — the CSS animations restart every time a scene is (re)shown
-   because show() rebuilds the DOM. */
-/* The animated lesson is the thing worth making big — it was capped at 720px
-   regardless of screen size. Unlike prose, a diagram only gets better wider. */
+/* ---- "Check your understanding" — the learning loop after every answer ---- */
+.quiz{margin-top:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-2);padding:14px 16px}
+.quiz-h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;margin-bottom:8px}
+.quiz-h .qn{margin-left:auto;font-size:13px;color:var(--text-3);font-weight:700}
+.qq{padding:10px 0;border-top:1px solid var(--border)}
+.qq:first-of-type{border-top:0}
+.qq .qt{font-weight:700;margin:0 0 8px}
+.qopts{display:grid;gap:6px}
+@media(min-width:720px){ .qopts{grid-template-columns:1fr 1fr} }
+.qopt{display:flex;align-items:center;gap:10px;text-align:left;border:1.5px solid var(--border-2);background:var(--surface);color:var(--text);
+      border-radius:var(--radius-2);padding:9px 12px;min-height:44px;font-weight:600;transition:.15s}
+.qopt b{width:26px;height:26px;border-radius:50%;background:var(--violet-soft);color:var(--violet-ink);display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex:0 0 auto}
+.qopt:hover:not(:disabled){border-color:var(--violet-2);background:var(--violet-soft)}
+.qopt:disabled{cursor:default;opacity:.8}
+.qopt.right{border-color:var(--green);background:var(--green-soft);opacity:1}
+.qopt.right b{background:var(--green);color:#fff}
+.qopt.wrong{border-color:var(--red);background:var(--red-soft);opacity:1}
+.qopt.wrong b{background:var(--red);color:#fff}
+.qwhy{margin:8px 0 0;font-size:14px;color:var(--text-2);font-weight:600}
+.qscore{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--green-soft);color:var(--green);font-weight:800;animation:pop .3s ease}
+
+/* ---------------- animated lesson (scenes) — the dark player ---------------- */
+.deck{--text:#efeaff;--text-2:#c4b8e8;--text-3:#8d7cb0;--gold:#e8b64c;--violet-2:#c4a2ff;
+      margin-top:14px;background:linear-gradient(160deg,#1a1339,#241a4f);border:1px solid rgba(232,182,76,.25);
+      border-radius:14px;overflow:hidden;color:var(--text);position:relative}
 .stage{display:block;width:100%;max-width:min(100%,1200px);height:auto;margin:6px auto 0}
-
-/* ---- hand-drawn subject diagram (anatomy etc.) ----
-   Portrait, so it is capped by HEIGHT: a tall figure that filled the width
-   would push its own labels off a laptop slide. */
 .stage.figure{max-width:min(100%,560px);max-height:min(58vh,500px);width:auto;margin-inline:auto}
 .deck.fs .stage.figure{max-height:64vh}
 .fbody{fill:rgba(255,255,255,.045);stroke:rgba(255,255,255,.16);stroke-width:2}
@@ -186,39 +223,25 @@ main{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;
 .flabg{opacity:0;animation:flabin .5s ease forwards}
 @keyframes flabin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .flead{stroke:rgba(255,255,255,.34);stroke-width:1.5;stroke-dasharray:3 3}
-.flab{fill:var(--gold,#e8b64c);font-size:17px;font-weight:700;
-      font-family:inherit;paint-order:stroke;stroke:rgba(0,0,0,.5);stroke-width:3}
+.flab{fill:var(--gold,#e8b64c);font-size:17px;font-weight:700;font-family:inherit;paint-order:stroke;stroke:rgba(0,0,0,.5);stroke-width:3}
 @media(max-width:600px){ .flab{font-size:19px} }
-
-/* ---- the real textbook page, rendered by pdf.js ----
-   White card on purpose: it is a page from a printed book, and inverting it
-   would misrepresent the figure's own colours. */
-.bookpage{position:relative;margin:6px auto 0;max-width:min(100%,900px);min-height:130px;
-   border-radius:12px;overflow:hidden;background:#fff;border:1px solid rgba(255,255,255,.2);
-   box-shadow:0 12px 34px rgba(0,0,0,.45)}
+.bookpage{position:relative;margin:6px auto 0;max-width:min(100%,900px);min-height:130px;border-radius:12px;overflow:hidden;background:#fff;
+   border:1px solid rgba(255,255,255,.2);box-shadow:0 12px 34px rgba(0,0,0,.45)}
 .bookpage canvas{display:block;width:100%;height:auto}
-/* a slow drift across the page so the figure is "explained with animation"
-   rather than sitting there as a flat scan */
 .bookpage.ready canvas{transform-origin:50% 34%;animation:kenburns 16s ease-in-out both}
-/* a cropped FIGURE already fills the card — zooming it would cut its labels off */
 .bookpage.figure.ready canvas{animation:figin 1.1s ease both}
 @keyframes figin{from{opacity:0;transform:scale(1.03)}to{opacity:1;transform:none}}
 @keyframes kenburns{0%{transform:scale(1)}55%{transform:scale(1.13) translateY(-2.5%)}100%{transform:scale(1.06) translateY(-1%)}}
-.bookpage .bp-note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-   text-align:center;padding:16px;font-size:12.5px;color:#4b3f6b;background:#fff}
+.bookpage .bp-note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:16px;font-size:14px;color:#4b3f6b;background:#fff}
 .bookpage.failed{background:rgba(255,255,255,.05);box-shadow:none;min-height:0}
 .bookpage.failed .bp-note{position:static;background:none;color:var(--text-3)}
-.bp-cap{text-align:center;font-size:11.5px;color:var(--text-3);margin:6px 0 2px}
+.bp-cap{text-align:center;font-size:13px;color:var(--text-3);margin:6px 0 2px}
 @media(prefers-reduced-motion:reduce){ .bookpage.ready canvas{animation:none} }
-
-/* no-visual card: the scene's own key words instead of a bare emoji */
 .emoji.small{font-size:34px}
 .termcard{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px auto 2px;max-width:640px}
-.term{background:rgba(196,162,255,.14);border:1px solid rgba(196,162,255,.3);color:var(--text);
-      border-radius:999px;padding:6px 13px;font-size:14px;font-weight:600;
-      opacity:0;animation:flabin .45s ease forwards}
+.term{background:rgba(196,162,255,.14);border:1px solid rgba(196,162,255,.3);color:var(--text);border-radius:999px;padding:6px 13px;font-size:14px;font-weight:600;opacity:0;animation:flabin .45s ease forwards}
 .deck.fs .stage{max-height:56vh;max-width:min(92vw,1000px)}
-.stage text{font-family:'Segoe UI',system-ui,sans-serif}
+.stage text{font-family:Nunito,'Segoe UI',system-ui,sans-serif}
 .an-pop{opacity:0;animation:svgpop .55s ease forwards}
 @keyframes svgpop{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
 .an-draw{stroke-dasharray:1;stroke-dashoffset:1;animation:svgdraw .9s ease forwards}
@@ -228,166 +251,441 @@ main{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;
 .an-spin{transform-box:fill-box;transform-origin:center;animation:svgspin .7s ease forwards;opacity:0}
 @keyframes svgspin{from{opacity:0;transform:scale(.4) rotate(-40deg)}to{opacity:1;transform:none}}
 
-/* ---------------- slides ---------------- */
-.deck{margin-top:12px;background:linear-gradient(160deg,#1a1339,#241a4f);border:1px solid rgba(232,182,76,.25);
-      border-radius:14px;overflow:hidden}
-.deck-head{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:11.5px;font-weight:700;color:var(--gold);
-           letter-spacing:.6px;border-bottom:1px solid rgba(255,255,255,.07)}
-.dh-spacer{flex:1}
-.dh-count{font-size:10.5px;color:var(--text-3);font-weight:600;margin-left:4px}
-.dh-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:var(--text);width:30px;height:30px;
-        border-radius:8px;cursor:pointer;font-size:15px;line-height:1;flex:0 0 auto;
-        display:inline-flex;align-items:center;justify-content:center}
-.dh-btn:hover{background:rgba(255,255,255,.14)}
-.abtn svg,.dh-btn svg{vertical-align:-2px}
-/* while a lesson is playing the button glows green and pulses; pressing it
-   again stops and returns it to normal */
-.abtn.playing,.dh-btn.playing{background:linear-gradient(90deg,#0d9488,#10b981)!important;
-   border-color:transparent!important;color:#fff;animation:playpulse 1.5s ease-in-out infinite}
+/* the slide */
+.slide{padding:20px 22px 12px;min-height:170px}
+.slide .emoji{font-size:34px;line-height:1;animation:pop .4s ease}
+.slide h3{margin:8px 0 10px;font-size:18px;color:#fff;font-weight:800}
+.slide li{font-size:15px;color:var(--text-2);margin:7px 0;opacity:0;animation:slidein .5s ease forwards}
+@keyframes slidein{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+
+/* ---- player bar: progress by scene, play/pause, prev/next, captions, speed, full screen ---- */
+.player{padding:8px 12px 10px;border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.18)}
+.pbar{display:flex;gap:4px;height:14px;align-items:center;cursor:pointer;margin:0 2px 6px}
+.pbar i{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.18);transition:.2s}
+.pbar i.done{background:rgba(232,182,76,.55)}
+.pbar i.on{background:var(--gold);height:7px}
+.prow{display:flex;align-items:center;gap:6px}
+.pbtn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;min-width:40px;height:40px;border-radius:10px;
+      display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;padding:0 10px;line-height:1}
+.pbtn:hover{background:rgba(255,255,255,.16)}
+.pbtn:disabled{opacity:.3;cursor:default}
+.pbtn.on{background:rgba(232,182,76,.22);border-color:rgba(232,182,76,.6);color:var(--gold)}
+.pbtn.playbtn{background:linear-gradient(90deg,var(--violet),#a855f7);border-color:transparent;min-width:46px}
+.pbtn.playbtn.playing{background:linear-gradient(90deg,#0d9488,#10b981)!important;animation:playpulse 1.5s ease-in-out infinite}
+.pbtn svg{width:16px;height:16px}
+.pcount{font-size:13px;font-weight:700;color:var(--text-2);margin-left:4px;white-space:nowrap}
+.plabel{font-size:12px;font-weight:800;letter-spacing:.6px;color:var(--gold);margin-left:auto;white-space:nowrap}
+.pspacer{flex:1}
+.abtn.playing{background:linear-gradient(90deg,#0d9488,#10b981)!important;border-color:transparent!important;color:#fff;animation:playpulse 1.5s ease-in-out infinite}
 @keyframes playpulse{0%,100%{box-shadow:0 0 0 0 rgba(52,211,153,.55)}50%{box-shadow:0 0 0 8px rgba(52,211,153,0)}}
+
 /* full-screen lesson mode: native Fullscreen API where available, and the same
    fixed overlay everywhere else (iPhone Safari has no element fullscreen) */
 .deck.fs{position:fixed;inset:0;margin:0;z-index:1000;border-radius:0;border:0;display:flex;flex-direction:column;
          background:linear-gradient(160deg,#151030,#241a4f 60%,#1c1440)}
-.deck.fs .deck-head{font-size:14px;padding:14px 20px}
-.deck.fs .slide{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;
-                text-align:center;padding:4vh 7vw;min-height:0;overflow-y:auto}
+.deck.fs .slide{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:4vh 7vw;min-height:0;overflow-y:auto}
 .deck.fs .slide .emoji{font-size:clamp(52px,11vw,120px)}
 .deck.fs .slide h3{font-size:clamp(28px,6vw,58px);margin:2vh 0 3vh}
 .deck.fs .slide ul{list-style:none;padding:0;margin:0;max-width:900px}
 .deck.fs .slide li{font-size:clamp(18px,3.4vw,32px);line-height:1.5;margin:2vh 0;color:var(--text)}
-.deck.fs .deck-nav{padding:14px 20px calc(14px + env(safe-area-inset-bottom))}
-.deck.fs .deck-nav button{width:52px;height:52px;font-size:22px;border-radius:12px}
-.deck.fs .deck-dots i{width:10px;height:10px}
+.deck.fs .player{padding:10px 18px calc(12px + env(safe-area-inset-bottom))}
+.deck.fs .pbtn{height:48px;min-width:48px;font-size:17px}
+.deck.fs .pbtn svg{width:20px;height:20px}
 body.fs-lock{overflow:hidden}
 .deck:fullscreen{width:100%;height:100%}
-.slide{padding:20px 22px 16px;min-height:150px}
-.slide .emoji{font-size:34px;line-height:1;animation:pop .4s ease}
-.slide h3{margin:8px 0 10px;font-size:17px;color:#fff}
-.slide li{font-size:13.5px;color:var(--text-2);margin:7px 0;opacity:0;animation:slidein .5s ease forwards}
-@keyframes slidein{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
-.deck-nav{display:flex;align-items:center;gap:10px;padding:9px 14px;border-top:1px solid rgba(255,255,255,.07)}
-.deck-nav button{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:var(--text);
-                 width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px}
-.deck-nav button:disabled{opacity:.3;cursor:default}
-.deck-dots{flex:1;display:flex;gap:5px;justify-content:center}
-.deck-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18)}
-.deck-dots i.on{background:var(--gold)}
+.fs-teacher,.fs-subtitle{display:none}
+.deck.fs .fs-teacher{display:block;position:absolute;right:16px;bottom:calc(96px + env(safe-area-inset-bottom));width:min(26vmin,190px);aspect-ratio:1/1;
+              border-radius:50%;z-index:6;border:2px solid var(--gold);box-shadow:0 0 0 6px rgba(232,182,76,.12),0 10px 30px rgba(0,0,0,.5);background:#1a1339}
+.deck.fs .fs-subtitle{display:block;position:absolute;left:50%;transform:translateX(-50%);bottom:calc(98px + env(safe-area-inset-bottom));max-width:72%;z-index:5;
+              background:rgba(0,0,0,.6);border-radius:10px;padding:8px 14px;font-size:clamp(15px,2.2vw,21px);line-height:1.5;color:#fff;text-align:center;max-height:5em;overflow:hidden}
+.deck.fs .fs-subtitle:empty,.deck.nocc .fs-subtitle{display:none}
+.deck.fs:not(.nocc):has(.fs-subtitle:not(:empty)) .slide{padding-bottom:calc(170px + env(safe-area-inset-bottom))}
+@media(max-width:700px){ .deck.fs .fs-teacher{bottom:auto;top:56px;right:12px;width:22vmin} }
 
-/* ---------------- composer ---------------- */
-.composer{position:sticky;bottom:0;background:rgba(20,16,42,.92);backdrop-filter:blur(10px);
-          padding:10px 0 14px;border-top:1px solid rgba(255,255,255,.06)}
-.comp-row{display:flex;gap:9px;align-items:flex-end}
-select#classSel{background:var(--card);color:var(--text);border:1px solid rgba(255,255,255,.14);border-radius:11px;
-                padding:11px 8px;font-size:13px;flex:0 0 auto;max-width:118px}
-textarea#q{flex:1;resize:none;background:var(--card);color:var(--text);border:1px solid rgba(255,255,255,.14);
-           border-radius:11px;padding:12px 14px;font-size:14.5px;font-family:inherit;line-height:1.5;
-           min-height:46px;max-height:300px;overflow-y:hidden}
-textarea#q:focus{outline:2px solid var(--violet-2);border-color:transparent}
-button#send{flex:0 0 auto;width:46px;height:46px;border:0;border-radius:12px;cursor:pointer;font-size:18px;
-            background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff}
-button#send:disabled{opacity:.4;cursor:default}
-button#mathToggle,button#photoBtn,button#micBtn{flex:0 0 auto;width:46px;height:46px;border-radius:12px;cursor:pointer;font-size:16px;
-            background:var(--card);color:var(--text-2);border:1px solid rgba(255,255,255,.14)}
-button#mathToggle.on,button#photoBtn.on{background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff;border-color:transparent}
-button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color:#fff;border-color:transparent;
-            animation:micpulse 1.2s ease-in-out infinite}
-@keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.45)}50%{box-shadow:0 0 0 9px rgba(244,63,94,0)}}
-.photo-preview{display:none;align-items:center;gap:10px;margin-top:8px;background:rgba(255,255,255,.05);
-            border:1px solid rgba(255,255,255,.12);border-radius:11px;padding:8px 10px}
+/* ---------------- composer (pinned to the bottom of the Ask view) ---------------- */
+.composer{background:var(--surface);border-top:1px solid var(--border);padding:10px 20px calc(12px + env(safe-area-inset-bottom))}
+.composer .inner{max-width:1100px;margin:0 auto}
+.comp-box{border:1.5px solid var(--border-2);border-radius:18px;background:var(--surface);padding:8px 10px 8px 12px;transition:.15s;box-shadow:var(--shadow-2)}
+.comp-box:focus-within{border-color:var(--violet);box-shadow:0 0 0 4px rgba(127,0,255,.12)}
+textarea#q{display:block;width:100%;resize:none;border:0;background:none;color:var(--text);padding:8px 4px;font-size:16px;line-height:1.5;
+           min-height:44px;max-height:300px;overflow-y:hidden;outline:none}
+textarea#q::placeholder{color:var(--text-3)}
+.comp-row{display:flex;gap:6px;align-items:center;margin-top:4px}
+select#classSel{appearance:none;-webkit-appearance:none;background:var(--violet-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b21b6' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 9px center/14px;
+                color:var(--violet-ink);border:0;border-radius:12px;padding:0 30px 0 12px;font-size:14px;font-weight:800;height:40px;max-width:150px;cursor:pointer}
+.ibtn{flex:0 0 auto;width:40px;height:40px;border-radius:12px;border:0;background:none;color:var(--text-2);display:inline-flex;align-items:center;justify-content:center}
+.ibtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ibtn:hover{background:var(--surface-2);color:var(--text)}
+.ibtn.on{background:var(--violet-soft);color:var(--violet-ink)}
+button#micBtn.listening{background:var(--red-soft);color:var(--red);animation:micpulse 1.2s ease-in-out infinite}
+@keyframes micpulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.35)}50%{box-shadow:0 0 0 8px rgba(244,63,94,0)}}
+.comp-spacer{flex:1}
+button#send{flex:0 0 auto;width:44px;height:44px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--violet),var(--violet-2));color:#fff;
+            display:inline-flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(127,0,255,.28)}
+button#send svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+button#send:disabled{opacity:.4;cursor:default;box-shadow:none}
+.photo-preview{display:none;align-items:center;gap:10px;margin:0 0 8px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:8px 10px}
 .photo-preview.show{display:flex}
 .photo-preview img{width:56px;height:56px;object-fit:cover;border-radius:8px;flex:0 0 auto}
-.photo-preview .pp-note{font-size:12px;color:var(--text-2);flex:1}
-.photo-preview .pp-x{flex:0 0 auto;border:0;background:rgba(220,60,80,.25);color:#ffb4c0;border-radius:8px;
-            width:30px;height:30px;cursor:pointer;font-size:14px}
-.msg.user img.qphoto{display:block;max-width:180px;max-height:180px;border-radius:10px;margin-top:8px}
-.ocrline{font-size:12px;color:var(--text-2);background:rgba(232,182,76,.08);border:1px solid rgba(232,182,76,.25);
-            border-radius:9px;padding:7px 10px;margin:0 0 8px}
-.mathbar{display:none;flex-direction:column;gap:6px;margin-top:8px}
+.photo-preview .pp-note{font-size:14px;font-weight:600;color:var(--text-2);flex:1}
+.photo-preview .pp-x{flex:0 0 auto;border:0;background:var(--red-soft);color:var(--red);border-radius:8px;width:36px;height:36px;font-size:15px}
+.mathbar{display:none;flex-direction:column;gap:6px;margin:0 0 8px}
 .mathbar.open{display:flex}
 .mathrow{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
-.mkey{flex:0 0 auto;font-size:14px;color:var(--text);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
-      border-radius:9px;padding:7px 11px;cursor:pointer;transition:.12s;font-family:Georgia,'Times New Roman',serif;line-height:1}
-.mkey:hover{background:rgba(127,0,255,.3)}
+.mkey{flex:0 0 auto;font-size:16px;color:var(--text);background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:7px 12px;min-height:38px;
+      transition:.12s;font-family:Georgia,'Times New Roman',serif;line-height:1}
+.mkey:hover{background:var(--violet-soft)}
 .mkey:active{transform:scale(.93)}
-.mkey.fn{font-family:inherit;font-size:12.5px;color:var(--gold)}
-.mathtip{font-size:10px;color:var(--text-3);white-space:nowrap;overflow-x:auto}
-/* Phones: the single composer row can't hold the question box + class
-   selector + 4 buttons — wrap into two rows: full-width question box on
-   top, then class + mic/photo/math/send sharing the second row. */
-@media(max-width:600px){
-  .comp-row{flex-wrap:wrap}
-  textarea#q{flex:1 1 100%;order:-1}
-  select#classSel{flex:1 1 auto;max-width:none;min-width:0;height:44px}
-  button#micBtn,button#photoBtn,button#mathToggle,button#send{width:44px;height:44px}
-}
-.hintrow{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
-.hint{font-size:11.5px;color:var(--text-2);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-      border-radius:16px;padding:5px 11px;cursor:pointer;transition:.15s}
-.hint:hover{background:rgba(127,0,255,.25)}
-.statusline{font-size:10.5px;color:var(--text-3);margin-top:8px;text-align:center}
+.mkey.fn{font-family:inherit;font-size:14px;font-weight:700;color:var(--violet-ink)}
+.mathtip{font-size:13px;color:var(--text-3);font-weight:600;white-space:nowrap;overflow-x:auto}
+.comp-foot{font-size:12px;color:var(--text-3);text-align:center;margin-top:6px;font-weight:600}
 
-/* ---------------- engine settings (⚙) ---------------- */
-.emodal{position:fixed;inset:0;z-index:2000;background:rgba(10,8,24,.72);display:flex;
-        align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+/* ---------------- Library ---------------- */
+.classrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.cchip{border:1.5px solid var(--border-2);background:var(--surface);color:var(--text-2);border-radius:20px;padding:0 14px;min-height:40px;font-weight:800;font-size:14px}
+.cchip.on{background:var(--violet);border-color:var(--violet);color:#fff}
+.lib-sub{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-2);margin-bottom:12px;overflow:hidden}
+.lib-sub > summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px 16px;font-weight:800;font-size:16px;cursor:pointer;min-height:52px}
+.lib-sub > summary::-webkit-details-marker{display:none}
+.lib-sub > summary .n{margin-left:auto;font-size:13px;color:var(--text-3);font-weight:700}
+.lib-sub > summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--text-3);border-bottom:2px solid var(--text-3);transform:rotate(-45deg);transition:.2s;margin-left:6px}
+.lib-sub[open] > summary::after{transform:rotate(45deg)}
+.lib-book{padding:0 16px 10px}
+.lib-book h4{margin:8px 0 6px;font-size:14px;color:var(--text-3);font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+.chap{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);flex-wrap:wrap}
+.chap .ct{flex:1;min-width:180px}
+.chap .ct b{display:block;font-size:15px}
+.chap .ct small{display:block;font-size:13px;color:var(--text-3);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}
+.chap .cb{display:flex;gap:6px}
+.sbtn{border:1px solid var(--border-2);background:var(--surface);color:var(--violet-ink);border-radius:10px;padding:0 12px;min-height:40px;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.sbtn:hover{background:var(--violet-soft)}
+.sbtn.primary{background:var(--violet);border-color:var(--violet);color:#fff}
+.lib-note{font-size:14px;color:var(--text-3);font-weight:600;margin:0 0 14px}
+
+/* ---------------- Recent lessons ---------------- */
+.rlist{display:flex;flex-direction:column;gap:10px}
+.ritem{display:flex;align-items:center;gap:12px;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+       padding:12px 14px;box-shadow:var(--shadow-2);min-height:56px;color:var(--text);width:100%}
+.ritem:hover{border-color:var(--violet-2)}
+.ritem .ri{width:40px;height:40px;border-radius:12px;background:var(--violet-soft);display:inline-flex;align-items:center;justify-content:center;font-size:19px;flex:0 0 auto}
+.ritem .rt{flex:1;min-width:0}
+.ritem .rt b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ritem .rt small{display:block;font-size:13px;color:var(--text-3);font-weight:600}
+.rempty{text-align:center;color:var(--text-3);padding:40px 12px;font-weight:600}
+.danger{border-color:var(--red);color:var(--red);background:var(--surface)}
+.danger:hover{background:var(--red-soft)}
+
+/* ---------------- Settings ---------------- */
+.sgroup{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-2);padding:6px 16px;margin-bottom:14px}
+.sgroup h3{font-size:13px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--text-3);margin:10px 0 4px}
+.srow{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--border);flex-wrap:wrap}
+.srow:first-of-type,.sgroup h3 + .srow{border-top:0}
+.srow .sl{flex:1;min-width:180px}
+.srow .sl b{display:block;font-size:15px}
+.srow .sl small{display:block;font-size:13px;color:var(--text-3);font-weight:600;line-height:1.4}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:none;color:var(--text-2);font-weight:700;font-size:14px;padding:0 12px;min-height:38px;border-radius:9px}
+.seg button.on{background:var(--surface);color:var(--violet-ink);box-shadow:var(--shadow-2)}
+.sel{background:var(--surface-2);color:var(--text);border:1px solid var(--border-2);border-radius:10px;padding:0 10px;min-height:44px;font-size:15px;font-weight:600;max-width:100%}
+#voiceSel{max-width:320px}
+.switch{position:relative;width:52px;height:30px;border-radius:15px;background:var(--border-2);border:0;flex:0 0 auto;transition:.2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.switch.on{background:var(--violet)}
+.switch.on::after{left:25px}
+.about{font-size:14px;color:var(--text-2);font-weight:600;line-height:1.7}
+.about .ok{color:var(--green);font-weight:800}
+.about .note{color:var(--text-3)}
+.about .warn{color:var(--amber);font-weight:800}
+.statusline{font-size:13px;color:var(--text-3);font-weight:600}
+
+/* ---------------- engine settings modal (unchanged behaviour, new skin) ---------------- */
+.emodal{position:fixed;inset:0;z-index:2000;background:rgba(15,10,35,.55);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
 .emodal[hidden]{display:none}
-.ecard{background:linear-gradient(180deg,var(--card),var(--card-2));border:1px solid rgba(255,255,255,.12);
-       border-radius:16px;max-width:540px;width:100%;padding:18px 20px;max-height:88vh;overflow-y:auto}
-.ecard h2{margin:0 0 4px;font-size:16px;color:var(--gold)}
-.ecard .esub{font-size:12px;color:var(--text-3);margin:0 0 12px;line-height:1.55}
-.ecard label{font-size:11.5px;color:var(--text-2);display:block;margin:10px 0 3px}
-.ecard select{width:100%;background:var(--card);color:var(--text);border:1px solid rgba(255,255,255,.16);
-       border-radius:9px;padding:9px;font-size:13px}
-.erow{display:flex;align-items:center;gap:8px;margin:8px 0}
-.erow .ename{flex:0 0 84px;font-size:13px;color:var(--text)}
-.erow .edot{flex:0 0 auto;font-size:10px;padding:2px 8px;border-radius:10px;
-       background:rgba(255,255,255,.07);color:var(--text-3);white-space:nowrap}
-.erow .edot.on{background:rgba(52,211,153,.16);color:var(--green)}
-.erow input{flex:1;min-width:0;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.14);
-       border-radius:8px;color:var(--text);padding:8px 9px;font-size:12px}
-.erow .eclear{flex:0 0 auto;font-size:11px;color:var(--red);background:none;border:0;
-       cursor:pointer;text-decoration:underline;padding:0}
-/* per-job engine pickers */
-.ehint{color:var(--text-3);font-weight:400}
-/* Stacked, not side-by-side: the job labels are long and this modal is read
-   on phones — a two-column row overflowed the card and forced a horizontal
-   scrollbar at ~500px wide. */
+.ecard{background:var(--surface);border:1px solid var(--border);border-radius:20px;max-width:560px;width:100%;max-height:calc(100dvh - 32px);
+       display:flex;flex-direction:column;min-height:0;box-shadow:var(--shadow)}
+.ecard h2{margin:0;font-size:18px;font-weight:800;padding:16px 20px 10px}
+.ecard .ebody{padding:0 20px;overflow-y:auto;min-height:0;flex:1}
+.ecard .esub{font-size:14px;color:var(--text-3);font-weight:600;margin:0 0 12px;line-height:1.55}
+.ecard label{font-size:14px;font-weight:700;color:var(--text-2);display:block;margin:12px 0 4px}
+.ecard select{width:100%;background:var(--surface-2);color:var(--text);border:1px solid var(--border-2);border-radius:10px;padding:0 10px;min-height:44px;font-size:15px}
+.erow{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}
+.erow .ename{flex:0 0 84px;font-size:15px;font-weight:700}
+.erow .edot{flex:0 0 auto;font-size:12px;font-weight:800;padding:3px 9px;border-radius:10px;background:var(--surface-2);color:var(--text-3);white-space:nowrap}
+.erow .edot.on{background:var(--green-soft);color:var(--green)}
+.erow input{flex:1;min-width:140px;background:var(--surface-2);border:1px solid var(--border-2);border-radius:10px;color:var(--text);padding:0 10px;min-height:44px;font-size:15px}
+.erow .eclear{flex:0 0 auto;font-size:14px;font-weight:700;color:var(--red);background:none;border:0;text-decoration:underline;padding:0;min-height:36px}
+.ehint{color:var(--text-3);font-weight:600}
 .ejob{display:block;margin:9px 0 0}
-.ejob .ejob-l{display:block;font-size:12.5px;color:var(--text);margin-bottom:4px}
+.ejob .ejob-l{display:block;font-size:15px;font-weight:700;margin-bottom:4px}
 .ejob select{width:100%}
-.ejob-note{font-size:10.5px;color:var(--text-3);line-height:1.5;margin:3px 0 6px}
-.ejob-note.warn{color:var(--amber,#fbbf24)}
-.ebtns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.ejob-note{font-size:13px;color:var(--text-3);font-weight:600;line-height:1.5;margin:4px 0 6px}
+.ejob-note.warn{color:var(--amber)}
+.ebtns{display:flex;gap:8px;justify-content:flex-end;padding:12px 20px 16px;border-top:1px solid var(--border)}
 
-/* welcome */
-.welcome{background:linear-gradient(150deg,rgba(127,0,255,.14),rgba(232,182,76,.07));border:1px solid rgba(168,85,247,.25);
-         border-radius:var(--radius);padding:18px 20px}
-.welcome h2{margin:0 0 6px;font-size:17px;color:var(--gold)}
-.welcome p{margin:4px 0;font-size:13.5px;color:var(--text-2);line-height:1.6}
+/* ---------------- phone tab bar ---------------- */
+.tabbar{display:none}
+
+/* ---------------- responsive ---------------- */
+@media(max-width:1180px){
+  :root{--side:76px}
+  .brand-t,.newq span,.side-foot .foot-l,.nav button span{display:none}
+  .brand{justify-content:center;padding-bottom:10px}
+  .ver-badge{display:none}
+  .newq{margin:0 0 10px;padding:0}
+  .nav button{justify-content:center;padding:0}
+  .engine-pill{justify-content:center;padding:6px 8px}
+  .engine-pill .etxt,.pill-photo{display:none}
+}
+@media(max-width:820px){
+  .app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
+  .side{display:none}
+  .tabbar{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--border);
+          padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  .tabbar button{border:0;background:none;color:var(--text-3);display:flex;flex-direction:column;align-items:center;gap:2px;
+                 min-height:52px;font-size:calc(12px*var(--ts));font-weight:800;border-radius:12px}
+  .tabbar button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .tabbar button.on{color:var(--violet-ink);background:var(--violet-soft)}
+  .vhead{padding:10px 14px;min-height:60px}
+  .vhead .ver-badge{display:inline-block}
+  .vbody{padding:14px}
+  .feed{padding:14px 12px 10px}
+  .composer{padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
+  .msg{padding:12px 14px}
+  .msg.user{max-width:92%}
+  .empty h2{font-size:22px}
+  .starters{grid-template-columns:1fr}
+  .chap .cb{width:100%}
+  .chap .cb .sbtn{flex:1;justify-content:center}
+  /* phone type scale × the Text size setting (Material 16sp body / 12sp floor) */
+  body{font-size:calc(16px*var(--ts))}
+  .msg,.hint,.qopt,.abtn,textarea#q,.sel,.seg button,.cchip,.sbtn{font-size:calc(15px*var(--ts))}
+  .msg{font-size:calc(16px*var(--ts))}
+  .chip,.tstatus,.trole,.seccopy,.copyq,.about,.statusline,.mathtip,.qwhy,.lib-note,.ritem .rt small,.chap .ct small,.srow .sl small{font-size:calc(13px*var(--ts))}
+  .comp-foot{font-size:calc(12px*var(--ts))}
+  .empty p,.qq .qt,.tname,.vhead h2{font-size:calc(16px*var(--ts))}
+  .vhead h2{font-size:calc(18px*var(--ts))}
+  select#classSel{font-size:calc(14px*var(--ts))}
+  .slide h3{font-size:calc(18px*var(--ts))}.slide li{font-size:calc(15px*var(--ts))}
+  html[data-ts="huge"] .qopts,html[data-ts="max"] .qopts{grid-template-columns:1fr}
+}
+@media(max-width:600px){ .seccopy span{display:none} .seccopy{padding:5px 7px} .plabel{display:none} }
+@media(prefers-reduced-motion:reduce){ *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important} }
 </style>
 </head>
 <body>
-<header>
-  <div class="logo" aria-hidden="true">
-    <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
-    <i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i>
-    <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
-    <i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i>
-    <i></i><i style="opacity:.35"></i><i></i><i style="opacity:.35"></i><i></i>
+<a class="skip" href="#q">Skip to the question box</a>
+<div class="app">
+<!-- ═══════════ sidebar (desktop / tablet rail) ═══════════ -->
+<aside class="side" aria-label="Main navigation">
+  <div class="brand">
+    <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="brand-t"><h1>IBI Skilled Foundations Teacher</h1><small>NCERT Class 1–12 <span class="ver-badge" id="verBadge" title="v5.0 — A professional learning app, built to current edtech standards. LIGHT learning surface with a dark mode that follows your phone; Nunito type at 16px with nothing under 12px; a sidebar (Ask · Library · Recent · Settings) that becomes a bottom tab bar on phones; the question box pinned to the bottom of the conversation; S. Sastika as a compact live portrait in the conversation header; a LIBRARY that browses every textbook the teacher has read (class → subject → book → chapter) with one-tap Explain / Questions / Open the book; RECENT lessons you can return to; a real lesson PLAYER (progress by scene, play/pause, previous/next, captions, speed, full screen); CHECK YOUR UNDERSTANDING — three questions after every answer with instant feedback; a SETTINGS screen (theme, text size, voice, lesson speed, captions, AI engine, install) with an About line showing App and Backend versions in step (backend 5.0); installable as an app (PWA) and a sign-in page in the same design. v4.6 — The laptop's own brain is new, and there is now only one of it (qwen3.5:4b reads photos and writes lessons). v4.5 — The textbook picture stays on screen long enough to be studied. v4.4 — The textbook slide shows the actual FIGURE. v4.3 — Copy any single part of an answer. v4.2 — Copy buttons on questions and answers. v4.1 — Pick the engine per job; photos can go to the cloud. v4.0 — Animated video lessons and multi-engine settings.">v5.0</span></small></div>
   </div>
-  <h1>IBI Skilled Foundations Teacher<small>NCERT Class 1–12 · explained simply</small></h1>
-  <span class="ver-badge" id="verBadge" title="v4.6 — The laptop's own brain is new, and there is now only one of it. Photographed questions are read by the same model that writes the lesson, so asking about a photo and then asking a follow-up no longer stops for 7-12 seconds while one model is swapped out for the other. That model also now stays awake between questions instead of taking 13 seconds to load after a quiet spell, and it reads the labels in a photographed question more accurately than the old one did. v4.5 — The textbook picture now STAYS on the screen. The lesson waits for the page to finish loading before Sastika starts that slide, and holds the picture for seven seconds after she finishes it, so it is there to be studied instead of flashing past. Her words on that slide now ask the student to read the labels around the picture. v4.4 — The textbook slide now shows the actual PICTURE. It searches the cited page and its neighbours for the figure whose caption matches the lesson, crops to that figure with its labels, and names it under the card — instead of showing whichever page the words came from, which was often solid text. It reads drawn figures as well as photographs, ignores the page background and the &quot;not to be republished&quot; watermark, and handles the new primary books whose pictures carry no captions. When nothing convincing is found it still shows the cited page and never claims a picture. v4.3 — Copy any single part of an answer. Every part of a lesson now carries its own small Copy button — a ### section when the answer has sections, otherwise each paragraph — so one step can be taken into your notes without the rest. v4.2 — Copy anything you have already asked or been taught. Every question you asked now carries a Copy button, and every answer carries Copy answer, so a question can be pasted straight back into the box to ask it again, and a lesson can be pasted into your notes. v4.1 — Pick the engine per job. The teacher calls a model in exactly two places, and the best brain differs by job, so ⚙ AI engine now lets you choose one for Answers &amp; animated lessons and another for Reading a photographed question. Photos can now be read by Gemini, ChatGPT or Claude as well as the laptop's own gemma3:4b — far better on messy handwriting — and a cloud failure falls back to the laptop so a photo is never rejected outright. Auto now means best-available FOR THAT JOB: a DeepSeek key is the best answer engine but cannot see a photo, so photos stay on the laptop instead of spending a failed call. Each choice says in plain words what it will actually do, and an engine that cannot read images is never offered for photos. v4.0 — Animated video lessons ([SCENES] to self-animating SVG synced to speech) and multi-engine settings.">v4.6</span>
-  <div class="spacer"></div>
-  <div class="engine-pill" id="enginePill">checking engine…</div>
-  <button class="engine-pill" id="engineCfg" title="AI engine settings — add a DeepSeek, Gemini, ChatGPT or Claude key" style="cursor:pointer">⚙</button>
-  <button class="engine-pill" id="clearChat" title="Clear saved chat history" style="cursor:pointer">🗑</button>
-</header>
+  <button class="newq" id="newChat" title="Start a new question"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>New question</span></button>
+  <nav class="nav" id="nav">
+    <button data-view="ask" class="on"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg><span>Ask Sastika</span></button>
+    <button data-view="library"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Library</span></button>
+    <button data-view="recent"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Recent lessons</span></button>
+    <button data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
+  </nav>
+  <div class="side-spacer"></div>
+  <div class="side-foot">
+    <div class="engine-pill" id="enginePill" title="Which AI engine answers right now"><span class="etxt">checking engine…</span></div>
+    <span class="foot-l">India Business International</span>
+  </div>
+</aside>
+
+<!-- ═══════════ views ═══════════ -->
+<main class="views" id="main">
+
+<!-- ─── Ask ─── -->
+<section class="view on" id="view-ask" aria-label="Ask Sastika">
+  <header class="vhead">
+    <div class="tutor" id="teacherCard">
+      <div class="avatar-wrap">
+        <!-- S. Sastika — real photo (teacher-photo.png, kept on the laptop only,
+             never in the public repo); the drawn avatar below is the fallback -->
+        <img id="teacherPhoto" alt="S. Sastika, your teacher" src="teacher-photo.png"
+             onload="this.classList.add('ok');document.getElementById('svgAvatar').style.display='none'">
+        <svg id="svgAvatar" viewBox="0 0 220 230" xmlns="http://www.w3.org/2000/svg" aria-label="Your teacher">
+          <defs>
+            <linearGradient id="sareeG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f7f0dc"/><stop offset="1" stop-color="#efe3c3"/></linearGradient>
+            <linearGradient id="goldG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e8b64c"/><stop offset="1" stop-color="#c98f1e"/></linearGradient>
+            <radialGradient id="cheekG" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#e58f6a" stop-opacity=".55"/><stop offset="1" stop-color="#e58f6a" stop-opacity="0"/></radialGradient>
+          </defs>
+          <circle cx="110" cy="112" r="96" fill="rgba(127,0,255,.14)"/>
+          <circle cx="110" cy="112" r="96" fill="none" stroke="rgba(232,182,76,.35)" stroke-width="1.5"/>
+          <path d="M38 230 Q40 176 78 165 L142 165 Q180 176 182 230 Z" fill="#5b21b6"/>
+          <path d="M38 230 Q40 176 78 165 L98 165 Q60 190 58 230 Z" fill="url(#sareeG)"/>
+          <path d="M120 165 L142 165 Q180 176 182 230 L156 230 Q152 190 120 165 Z" fill="url(#sareeG)"/>
+          <path d="M120 165 Q150 186 154 230 L146 230 Q142 192 116 169 Z" fill="url(#goldG)"/>
+          <path d="M96 138 L124 138 L124 168 Q110 178 96 168 Z" fill="#c1794f"/>
+          <path d="M96 152 Q110 162 124 152 L124 168 Q110 178 96 168 Z" fill="#b06a41" opacity=".55"/>
+          <path d="M97 166 Q110 176 123 166" fill="none" stroke="url(#goldG)" stroke-width="3" stroke-linecap="round"/>
+          <g class="head-group">
+            <circle cx="66" cy="124" r="3" fill="#e8b64c"/><path d="M63 126 a4.5 5 0 0 0 7 0 z" fill="url(#goldG)"/>
+            <circle cx="154" cy="124" r="3" fill="#e8b64c"/><path d="M151 126 a4.5 5 0 0 0 7 0 z" fill="url(#goldG)"/>
+            <ellipse cx="110" cy="106" rx="44" ry="48" fill="#c98456"/>
+            <ellipse cx="110" cy="108" rx="43" ry="46" fill="#d18d5e"/>
+            <path d="M66 108 Q60 48 110 44 Q160 48 154 108 Q156 78 138 68 Q142 78 136 74 Q120 62 110 63 Q100 62 84 74 Q78 78 82 68 Q64 78 66 108 Z" fill="#241a17"/>
+            <path d="M110 44 Q100 52 84 74 L110 63 L136 74 Q120 52 110 44 Z" fill="#2e211c"/>
+            <ellipse cx="158" cy="140" rx="15" ry="16" fill="#241a17"/>
+            <g fill="#fdfaf1"><circle cx="150" cy="130" r="2.6"/><circle cx="156" cy="127.5" r="2.6"/><circle cx="162" cy="129" r="2.6"/><circle cx="166" cy="133.5" r="2.6"/><circle cx="167" cy="139" r="2.6"/></g>
+            <circle cx="110" cy="84" r="3" fill="#c0243a"/>
+            <path d="M84 90 Q92 85 100 89" fill="none" stroke="#241a17" stroke-width="2.6" stroke-linecap="round"/>
+            <path d="M120 89 Q128 85 136 90" fill="none" stroke="#241a17" stroke-width="2.6" stroke-linecap="round"/>
+            <g class="eye" style="transform-origin:92px 99px"><ellipse cx="92" cy="99" rx="7.4" ry="5" fill="#fff"/><circle cx="92.6" cy="99.6" r="3.4" fill="#3b2314"/><circle cx="93.7" cy="98.4" r="1.1" fill="#fff"/><path d="M84.5 97.5 Q92 92.5 99.5 97.3" fill="none" stroke="#241a17" stroke-width="1.7" stroke-linecap="round"/></g>
+            <g class="eye" style="transform-origin:128px 99px"><ellipse cx="128" cy="99" rx="7.4" ry="5" fill="#fff"/><circle cx="128.6" cy="99.6" r="3.4" fill="#3b2314"/><circle cx="129.7" cy="98.4" r="1.1" fill="#fff"/><path d="M120.5 97.3 Q128 92.5 135.5 97.5" fill="none" stroke="#241a17" stroke-width="1.7" stroke-linecap="round"/></g>
+            <path d="M109 102 Q107 112 104.5 115 Q108 118 112 116" fill="none" stroke="#b06a41" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="103" cy="113" r="1.4" fill="#e8b64c"/>
+            <ellipse cx="84" cy="115" rx="9" ry="6" fill="url(#cheekG)"/><ellipse cx="136" cy="115" rx="9" ry="6" fill="url(#cheekG)"/>
+            <g id="mouth"><path id="m-smile" d="M96 126 Q110 137 124 126 Q110 132 96 126 Z" fill="#a34a4a"/><ellipse id="m-open" cx="110" cy="129" rx="8.5" ry="6" fill="#8c3a3a" style="display:none"/><path id="m-mid" d="M99 127 Q110 134 121 127 Q110 139 99 127 Z" fill="#8c3a3a" style="display:none"/></g>
+          </g>
+        </svg>
+      </div>
+      <div class="tutor-t">
+        <div class="tname">S. Sastika</div>
+        <div class="tstatus" id="tstatus">Ask me anything from your textbooks!</div>
+      </div>
+    </div>
+    <span class="ver-badge" style="display:none" aria-hidden="true">v5.0</span>
+  </header>
+
+  <div id="feed" class="feed" aria-live="polite">
+    <div class="empty" id="emptyState">
+      <div class="hero-avatar" id="heroAvatar"></div>
+      <h2>Vanakkam! I'm S. Sastika 🙏</h2>
+      <p>I have studied every <b>NCERT textbook from Class 1 to 12</b>. Ask me anything and I will explain it simply, teach it as an <b>animated lesson</b> in my own voice, and check what you learnt with a quick quiz.</p>
+      <div class="starters" id="hints">
+        <div class="stgroup"><h4>🔬 Science</h4>
+          <button class="hint">Why is the sky blue?</button>
+          <button class="hint">What is friction? Give an everyday example</button>
+          <button class="hint">Explain Class 8 Science Chapter 5 in detail</button>
+        </div>
+        <div class="stgroup"><h4>➗ Mathematics</h4>
+          <button class="hint">Explain fractions with an example</button>
+          <button class="hint">If tan θ + sin θ = m and tan θ − sin θ = n, show that m² − n² = 4√(mn)</button>
+          <button class="hint">Questions of Class 10 Maths Chapter 8</button>
+        </div>
+        <div class="stgroup"><h4>🌏 Social Science &amp; English</h4>
+          <button class="hint">Why did the Revolt of 1857 happen?</button>
+          <button class="hint">Explain Class 6 Science chapter wise</button>
+          <button class="hint">What is a balance sheet?</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="composer">
+    <div class="inner">
+      <div class="photo-preview" id="photoPreview">
+        <img id="photoThumb" alt="your photo">
+        <div class="pp-note">Photo attached — I will read it when you press Send. You can also type extra instructions.</div>
+        <button class="pp-x" id="photoRemove" title="Remove photo" aria-label="Remove photo">✕</button>
+      </div>
+      <div class="mathbar" id="mathbar">
+        <div class="mathrow" id="mathSyms"></div>
+        <div class="mathrow" id="mathFns"></div>
+        <div class="mathtip">Tip: type <b>^2</b> → ², <b>^n</b> → ⁿ, <b>theta</b> → θ, <b>sqrt</b> → √, <b>&lt;=</b> → ≤ while writing</div>
+      </div>
+      <div class="comp-box">
+        <textarea id="q" rows="1" placeholder="Ask your question… e.g. Why does the moon change shape?" aria-label="Your question"></textarea>
+        <div class="comp-row">
+          <select id="classSel" title="Your class" aria-label="Your class">
+            <option value="0">All classes</option>
+            <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option>
+            <option value="4">Class 4</option><option value="5">Class 5</option><option value="6">Class 6</option>
+            <option value="7">Class 7</option><option value="8">Class 8</option><option value="9">Class 9</option>
+            <option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
+          </select>
+          <button class="ibtn" id="micBtn" title="Ask by voice — speak your question" aria-label="Ask by voice"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></svg></button>
+          <button class="ibtn" id="photoBtn" title="Attach a photo of your question — textbook or notebook page" aria-label="Attach a photo"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+          <button class="ibtn" id="mathToggle" title="Math symbols keyboard — type equations like cosec θ − sin θ = m" aria-label="Math keyboard"><svg viewBox="0 0 24 24"><path d="M3 12h3l2.5 7L13 4h8"/><path d="M15 12l5 6M20 12l-5 6"/></svg></button>
+          <span class="comp-spacer"></span>
+          <button id="send" title="Ask (Enter)" aria-label="Send"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" style="display:none">
+      <div class="comp-foot">Sastika teaches from NCERT textbooks and may make mistakes — check important answers with your book.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Library ─── -->
+<section class="view" id="view-library" aria-label="Library">
+  <header class="vhead"><div><h2>Library</h2><p>Every textbook Sastika has read — pick a class, then a chapter.</p></div></header>
+  <div class="vbody"><div class="inner">
+    <div class="classrow" id="libClasses"></div>
+    <p class="lib-note" id="libNote">Loading the library…</p>
+    <div id="libRoot"></div>
+  </div></div>
+</section>
+
+<!-- ─── Recent ─── -->
+<section class="view" id="view-recent" aria-label="Recent lessons">
+  <header class="vhead"><div><h2>Recent lessons</h2><p>Saved on this device — tap one to open it again.</p></div>
+    <span class="comp-spacer" style="flex:1"></span>
+    <button class="abtn danger" id="clearChat" title="Clear saved chat history">Clear history</button></header>
+  <div class="vbody"><div class="inner"><div class="rlist" id="recentList"></div></div></div>
+</section>
+
+<!-- ─── Settings ─── -->
+<section class="view" id="view-settings" aria-label="Settings">
+  <header class="vhead"><div><h2>Settings</h2><p>How Sastika looks and sounds on this device.</p></div></header>
+  <div class="vbody"><div class="inner">
+    <div class="sgroup">
+      <h3>Appearance</h3>
+      <div class="srow"><div class="sl"><b>Theme</b><small>System follows your phone or laptop setting.</small></div>
+        <div class="seg" id="themeSeg"><button data-k="system">System</button><button data-k="light">Light</button><button data-k="dark">Dark</button></div></div>
+      <div class="srow"><div class="sl"><b>Text size</b><small>Applies on phones and small screens.</small></div>
+        <div class="seg" id="tsChips"><button data-k="default">Default</button><button data-k="large">Large</button><button data-k="xl">Extra large</button><button data-k="huge">Huge</button><button data-k="max">Maximum</button></div></div>
+    </div>
+    <div class="sgroup">
+      <h3>Lessons</h3>
+      <div class="srow"><div class="sl"><b>Sastika's voice</b><small>Her own Tamil and Indian-English voices come from the teacher server; the rest are this device's.</small></div>
+        <select id="voiceSel" class="sel" title="Teacher's voice on this device" aria-label="Teacher's voice"></select></div>
+      <div class="srow"><div class="sl"><b>Lesson speed</b><small>How fast she speaks.</small></div>
+        <div class="seg" id="rateChips"><button data-k="0.75">0.75×</button><button data-k="1">1×</button><button data-k="1.25">1.25×</button><button data-k="1.5">1.5×</button></div></div>
+      <div class="srow"><div class="sl"><b>Captions</b><small>Show her words on screen during full-screen lessons.</small></div>
+        <button class="switch on" id="ccToggle" role="switch" aria-checked="true" aria-label="Captions"></button></div>
+    </div>
+    <div class="sgroup">
+      <h3>AI engine</h3>
+      <div class="srow"><div class="sl"><b>Which brain answers</b><small id="engineRowNote">Checking…</small></div>
+        <button class="abtn" id="engineCfg" title="AI engine settings — add a DeepSeek, Gemini, ChatGPT or Claude key">Change…</button></div>
+    </div>
+    <div class="sgroup">
+      <h3>App</h3>
+      <div class="srow" id="installRow"><div class="sl"><b>Install as an app</b><small id="installNote">Adds Sastika to your home screen, full screen, no browser bar.</small></div>
+        <button class="abtn primary" id="installBtn">Install</button></div>
+      <div class="srow"><div class="sl"><b>Chat history</b><small>Lessons are saved only on this device.</small></div>
+        <button class="abtn danger" id="clearChat2">Clear history</button></div>
+    </div>
+    <div class="sgroup">
+      <h3>About</h3>
+      <div class="srow"><div class="sl about" id="aboutLine">IBI Skilled Foundations Teacher</div></div>
+      <div class="srow"><div class="statusline" id="statusline">…</div></div>
+      <div class="srow"><div class="sl about"><b>India Business International</b><small>eCommerce for the World · Kanyakumari District, Tamil Nadu</small></div></div>
+    </div>
+  </div></div>
+</section>
+</main>
+
+<!-- ═══════════ phone tab bar ═══════════ -->
+<nav class="tabbar" id="tabbar" aria-label="Sections">
+  <button data-view="ask" class="on"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg>Ask</button>
+  <button data-view="library"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Library</button>
+  <button data-view="recent"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Recent</button>
+  <button data-view="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+</nav>
+</div>
 
 <!-- engine settings: pick the teacher's brain; keys are saved ONLY on the
      laptop (Backend\config.json) and are never shown back or published -->
 <div class="emodal" id="engineModal" hidden>
-  <div class="ecard">
-    <h2>⚙ AI engine</h2>
+  <div class="ecard" role="dialog" aria-labelledby="engineTitle">
+    <h2 id="engineTitle">⚙ AI engine</h2>
+    <div class="ebody">
     <p class="esub">The teacher answers with the engine below. A cloud key gives much better
       answers and animated lessons; keys are stored only on the laptop and never leave it.</p>
     <label for="engineSel">Default engine</label>
@@ -399,168 +697,20 @@ button#micBtn.listening{background:linear-gradient(135deg,#dc2645,#f43f5e);color
       <option value="openai">ChatGPT</option>
       <option value="anthropic">Claude</option>
     </select>
-
-    <!-- Per-job choice. There are exactly two jobs because there are exactly
-         two places the teacher calls a model; anything else would be a knob
-         that changes nothing. -->
     <label style="margin-top:14px">Choose an engine per job <span class="ehint">(leave on “default” to follow the setting above)</span></label>
-    <div class="ejob">
-      <span class="ejob-l">📚 Answers &amp; animated lessons</span>
-      <select id="engineChat" data-purpose="chat"></select>
-    </div>
+    <div class="ejob"><span class="ejob-l">📚 Answers &amp; animated lessons</span><select id="engineChat" data-purpose="chat"></select></div>
     <div class="ejob-note" id="chatNote"></div>
-    <div class="ejob">
-      <span class="ejob-l">📷 Reading a photographed question</span>
-      <select id="engineVision" data-purpose="vision"></select>
-    </div>
+    <div class="ejob"><span class="ejob-l">📷 Reading a photographed question</span><select id="engineVision" data-purpose="vision"></select></div>
     <div class="ejob-note" id="visionNote"></div>
     <label>API keys (paste to set — leave blank to keep the saved one)</label>
     <div id="engineRows"></div>
+    </div>
     <div class="ebtns">
       <button class="abtn" id="engineCancel">Cancel</button>
       <button class="abtn primary" id="engineSave">Save</button>
     </div>
   </div>
 </div>
-
-<main>
-  <div class="teacher-col">
-    <div class="teacher-card" id="teacherCard">
-      <div class="avatar-wrap">
-      <!-- S. Sastika — real photo (teacher-photo.png, kept on the laptop only,
-           never in the public repo); the drawn avatar below is the fallback -->
-      <img id="teacherPhoto" alt="S. Sastika, your teacher" src="teacher-photo.png"
-           onload="this.classList.add('ok');document.getElementById('svgAvatar').style.display='none'">
-      <svg id="svgAvatar" viewBox="0 0 220 230" xmlns="http://www.w3.org/2000/svg" aria-label="Your teacher">
-        <defs>
-          <linearGradient id="sareeG" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#f7f0dc"/><stop offset="1" stop-color="#efe3c3"/>
-          </linearGradient>
-          <linearGradient id="goldG" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stop-color="#e8b64c"/><stop offset="1" stop-color="#c98f1e"/>
-          </linearGradient>
-          <radialGradient id="cheekG" cx=".5" cy=".5" r=".5">
-            <stop offset="0" stop-color="#e58f6a" stop-opacity=".55"/><stop offset="1" stop-color="#e58f6a" stop-opacity="0"/>
-          </radialGradient>
-        </defs>
-        <!-- halo -->
-        <circle cx="110" cy="112" r="96" fill="rgba(127,0,255,.14)"/>
-        <circle cx="110" cy="112" r="96" fill="none" stroke="rgba(232,182,76,.35)" stroke-width="1.5"/>
-        <!-- shoulders / blouse + saree -->
-        <path d="M38 230 Q40 176 78 165 L142 165 Q180 176 182 230 Z" fill="#5b21b6"/>
-        <path d="M38 230 Q40 176 78 165 L98 165 Q60 190 58 230 Z" fill="url(#sareeG)"/>
-        <path d="M120 165 L142 165 Q180 176 182 230 L156 230 Q152 190 120 165 Z" fill="url(#sareeG)"/>
-        <path d="M120 165 Q150 186 154 230 L146 230 Q142 192 116 169 Z" fill="url(#goldG)"/>
-        <!-- neck -->
-        <path d="M96 138 L124 138 L124 168 Q110 178 96 168 Z" fill="#c1794f"/>
-        <path d="M96 152 Q110 162 124 152 L124 168 Q110 178 96 168 Z" fill="#b06a41" opacity=".55"/>
-        <!-- gold necklace -->
-        <path d="M97 166 Q110 176 123 166" fill="none" stroke="url(#goldG)" stroke-width="3" stroke-linecap="round"/>
-        <g class="head-group">
-          <!-- earrings (jhumka) -->
-          <circle cx="66" cy="124" r="3" fill="#e8b64c"/><path d="M63 126 a4.5 5 0 0 0 7 0 z" fill="url(#goldG)"/>
-          <circle cx="154" cy="124" r="3" fill="#e8b64c"/><path d="M151 126 a4.5 5 0 0 0 7 0 z" fill="url(#goldG)"/>
-          <!-- face -->
-          <ellipse cx="110" cy="106" rx="44" ry="48" fill="#c98456"/>
-          <ellipse cx="110" cy="108" rx="43" ry="46" fill="#d18d5e"/>
-          <!-- hair: parted, low bun -->
-          <path d="M66 108 Q60 48 110 44 Q160 48 154 108 Q156 78 138 68 Q142 78 136 74 Q120 62 110 63 Q100 62 84 74 Q78 78 82 68 Q64 78 66 108 Z" fill="#241a17"/>
-          <path d="M110 44 Q100 52 84 74 L110 63 L136 74 Q120 52 110 44 Z" fill="#2e211c"/>
-          <ellipse cx="158" cy="140" rx="15" ry="16" fill="#241a17"/>
-          <ellipse cx="158" cy="140" rx="15" ry="16" fill="none" stroke="#170f0d" stroke-width="1" opacity=".5"/>
-          <!-- jasmine (mullappoo) on the bun -->
-          <g fill="#fdfaf1">
-            <circle cx="150" cy="130" r="2.6"/><circle cx="156" cy="127.5" r="2.6"/><circle cx="162" cy="129" r="2.6"/>
-            <circle cx="166" cy="133.5" r="2.6"/><circle cx="167" cy="139" r="2.6"/>
-          </g>
-          <!-- bindi -->
-          <circle cx="110" cy="84" r="3" fill="#c0243a"/>
-          <!-- brows -->
-          <path d="M84 90 Q92 85 100 89" fill="none" stroke="#241a17" stroke-width="2.6" stroke-linecap="round"/>
-          <path d="M120 89 Q128 85 136 90" fill="none" stroke="#241a17" stroke-width="2.6" stroke-linecap="round"/>
-          <!-- eyes (blink via scaleY) -->
-          <g class="eye" style="transform-origin:92px 99px">
-            <ellipse cx="92" cy="99" rx="7.4" ry="5" fill="#fff"/>
-            <circle cx="92.6" cy="99.6" r="3.4" fill="#3b2314"/><circle cx="93.7" cy="98.4" r="1.1" fill="#fff"/>
-            <path d="M84.5 97.5 Q92 92.5 99.5 97.3" fill="none" stroke="#241a17" stroke-width="1.7" stroke-linecap="round"/>
-          </g>
-          <g class="eye" style="transform-origin:128px 99px">
-            <ellipse cx="128" cy="99" rx="7.4" ry="5" fill="#fff"/>
-            <circle cx="128.6" cy="99.6" r="3.4" fill="#3b2314"/><circle cx="129.7" cy="98.4" r="1.1" fill="#fff"/>
-            <path d="M120.5 97.3 Q128 92.5 135.5 97.5" fill="none" stroke="#241a17" stroke-width="1.7" stroke-linecap="round"/>
-          </g>
-          <!-- nose + nose pin -->
-          <path d="M109 102 Q107 112 104.5 115 Q108 118 112 116" fill="none" stroke="#b06a41" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="103" cy="113" r="1.4" fill="#e8b64c"/>
-          <!-- cheeks -->
-          <ellipse cx="84" cy="115" rx="9" ry="6" fill="url(#cheekG)"/>
-          <ellipse cx="136" cy="115" rx="9" ry="6" fill="url(#cheekG)"/>
-          <!-- mouth visemes -->
-          <g id="mouth">
-            <path id="m-smile" d="M96 126 Q110 137 124 126 Q110 132 96 126 Z" fill="#a34a4a"/>
-            <ellipse id="m-open" cx="110" cy="129" rx="8.5" ry="6" fill="#8c3a3a" style="display:none"/>
-            <path id="m-mid" d="M99 127 Q110 134 121 127 Q110 139 99 127 Z" fill="#8c3a3a" style="display:none"/>
-          </g>
-        </g>
-      </svg>
-      </div>
-      <div>
-        <div class="tname">S.&nbsp;Sastika</div>
-        <div class="trole">Your friendly foundations teacher<br>Kanyakumari District, Tamil Nadu 🌸</div>
-        <div class="tstatus" id="tstatus">Ask me anything from your textbooks!</div>
-        <select id="voiceSel" title="Teacher's voice on this device" style="display:none"></select>
-      </div>
-    </div>
-  </div>
-
-  <div class="chat-col">
-    <div id="feed">
-      <div class="welcome">
-        <h2>Vanakkam! I'm S. Sastika 🙏</h2>
-        <p>I have studied all the <b>NCERT textbooks from Class 1 to Class 12</b> — English, Mathematics, Science (Physics, Chemistry, Biology), Social Studies (History, Geography, Economics, Political Science), Commerce, Accountancy and more.</p>
-        <p>Ask me any question. I will explain it in very simple words and teach it as an <b>animated video lesson</b> 🎬 — pictures that draw themselves while I <b>speak the lesson aloud</b> 🔊. Choose your class below so I pick the right book.</p>
-      </div>
-    </div>
-
-    <div class="composer">
-      <div class="comp-row">
-        <select id="classSel" title="Your class">
-          <option value="0">All classes</option>
-          <option value="1">Class 1</option><option value="2">Class 2</option><option value="3">Class 3</option>
-          <option value="4">Class 4</option><option value="5">Class 5</option><option value="6">Class 6</option>
-          <option value="7">Class 7</option><option value="8">Class 8</option><option value="9">Class 9</option>
-          <option value="10">Class 10</option><option value="11">Class 11</option><option value="12">Class 12</option>
-        </select>
-        <textarea id="q" rows="1" placeholder="Ask your question… e.g. Why does the moon change shape?"></textarea>
-        <button id="micBtn" title="Ask by voice — speak your question">🎤</button>
-        <button id="photoBtn" title="Attach a photo of your question — textbook or notebook page">📷</button>
-        <button id="mathToggle" title="Math symbols keyboard — type equations like cosec θ − sin θ = m">√ˣ</button>
-        <button id="send" title="Ask">➤</button>
-      </div>
-      <input type="file" id="photoInput" accept="image/*" style="display:none">
-      <div class="photo-preview" id="photoPreview">
-        <img id="photoThumb" alt="your photo">
-        <div class="pp-note">Photo attached — I will read it when you press ➤.<br>You can also type extra instructions above.</div>
-        <button class="pp-x" id="photoRemove" title="Remove photo">✕</button>
-      </div>
-      <div class="mathbar" id="mathbar">
-        <div class="mathrow" id="mathSyms"></div>
-        <div class="mathrow" id="mathFns"></div>
-        <div class="mathtip">Tip: type <b>^2</b> → ², <b>^n</b> → ⁿ, <b>theta</b> → θ, <b>sqrt</b> → √, <b>&lt;=</b> → ≤ while writing</div>
-      </div>
-      <div class="hintrow" id="hints">
-        <span class="hint">Why is the sky blue?</span>
-        <span class="hint">Explain Class 6 Science chapter wise</span>
-        <span class="hint">Explain Class 8 Science Chapter 5 in detail</span>
-        <span class="hint">Explain fractions with an example</span>
-        <span class="hint">If tan θ + sin θ = m and tan θ − sin θ = n, show that m² − n² = 4√(mn)</span>
-        <span class="hint">What is a balance sheet?</span>
-      </div>
-      <div class="statusline" id="statusline">…</div>
-    </div>
-  </div>
-</main>
-
 <script>
 'use strict';
 /* ============================ avatar animation ============================ */
@@ -715,7 +865,21 @@ function initPortraits(){
   img.style.display = 'none';
   document.getElementById('svgAvatar').style.display = 'none';
   img.parentNode.insertBefore(card, img);
+  // v5.0: the same live portrait, bigger, on the empty-state hero — the
+  // registry draws every connected, visible canvas each frame
+  const hero = document.getElementById('heroAvatar');
+  if (hero){
+    const big = makePortrait(document.createElement('canvas'));
+    big.className = 'photo-canvas ok';
+    hero.appendChild(big);
+  }
 }
+// no photo on this device (public repo): the drawn avatar stands in on the hero too
+document.getElementById('teacherPhoto').addEventListener('error', () => {
+  const hero = document.getElementById('heroAvatar');
+  const svg = document.getElementById('svgAvatar');
+  if (hero && svg && !hero.firstChild) hero.appendChild(svg.cloneNode(true));
+});
 {
   const img = document.getElementById('teacherPhoto');
   if (img.complete && img.naturalWidth) initPortraits();
@@ -791,6 +955,33 @@ document.getElementById('voiceSel').addEventListener('change', e => {
 
 let speakingNow = false, speakToken = 0;
 
+/* v5.0 — a real player: PAUSE/RESUME and SPEED, honoured by both speech paths.
+   The server voice pauses its <audio>; the device voice pauses speechSynthesis
+   (and both loops wait at the next item boundary while paused). */
+let paused = false;
+const RATE_LS = 'sft_rate';
+function lessonRate(){ const r = parseFloat(localStorage.getItem(RATE_LS)); return (r >= 0.5 && r <= 2) ? r : 1; }
+function untilResumed(){
+  if (!paused) return Promise.resolve();
+  return new Promise(res => { const t = setInterval(() => { if (!paused){ clearInterval(t); res(); } }, 120); });
+}
+function pauseSpeak(){
+  if (!speakingNow || paused) return;
+  paused = true;
+  try { ttsAudio.pause(); } catch(e){}
+  try { speechSynthesis.pause(); } catch(e){}
+  document.querySelectorAll('.pbtn.playbtn.playing').forEach(b => { b.innerHTML = ICON_PLAY; b.title = 'Paused — press to continue'; });
+  const st = document.getElementById('tstatus'); st.textContent = '⏸ Paused'; st.classList.remove('speaking');
+}
+function resumeSpeak(){
+  if (!paused) return;
+  paused = false;
+  try { if (ttsAudio.src && ttsAudio.paused) ttsAudio.play().catch(()=>{}); } catch(e){}
+  try { speechSynthesis.resume(); } catch(e){}
+  document.querySelectorAll('.pbtn.playbtn.playing').forEach(b => { b.innerHTML = ICON_PAUSE; b.title = 'Playing — press to pause'; });
+  const st = document.getElementById('tstatus'); st.textContent = '🔊 Teaching…'; st.classList.add('speaking');
+}
+
 function cleanForSpeech(t){
   return t.replace(/```[\s\S]*?```/g,' ')
           .replace(/\[(.*?)\]\(.*?\)/g,'$1')
@@ -820,6 +1011,9 @@ const ICON_PLAY = '<svg width="13" height="13" viewBox="0 0 24 24" fill="current
 const ICON_STOP = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>';
 const ICON_FS   = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>';
 const ICON_X    = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const ICON_PAUSE = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+const ICON_PREV = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg>';
+const ICON_NEXT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg>';
 
 function markPlaying(btn, stopLabel){
   if (!btn) return;
@@ -887,6 +1081,8 @@ async function speakServerItems(items, opts, voiceId){
     }
     pending = i + 1 < list.length ? fetchOne(list[i + 1]) : null;
     if (token !== speakToken || !speakingNow) return true;
+    await untilResumed();                               // paused between items
+    if (token !== speakToken || !speakingNow) return true;
     if (list[i].onStart){ try { list[i].onStart(); } catch (e) {} }
     const rp = itemReady(list[i]);
     if (rp) await rp;                                   // wait for the picture
@@ -897,7 +1093,8 @@ async function speakServerItems(items, opts, voiceId){
       const url = URL.createObjectURL(blob);
       await new Promise(res => {
         ttsAudio.src = url; ttsAudio.onended = res; ttsAudio.onerror = res;
-        ttsAudio.play().catch(res);
+        ttsAudio.playbackRate = lessonRate();
+        if (paused) res(); else ttsAudio.play().catch(res);
       });
       URL.revokeObjectURL(url);
     }
@@ -931,6 +1128,7 @@ function speakBrowserItems(items, opts){
   };
   const next = () => {
     if (token !== speakToken || !speakingNow) return;
+    if (paused){ untilResumed().then(next); return; }   // hold at the item boundary
     if (i >= steps.length){ endSpeak(); if (opts.onEnd) opts.onEnd(); return; }
     const step = steps[i++];
     if (step.onStart){ try { step.onStart(); } catch(e){} }
@@ -940,7 +1138,7 @@ function speakBrowserItems(items, opts){
       if (!step.text){ after(step)(); return; }
       const u = new SpeechSynthesisUtterance(step.text);
       if (voice){ u.voice = voice; u.lang = voice.lang; }
-      u.rate = opts.rate || 0.97; u.pitch = 1.06;
+      u.rate = (opts.rate || 0.97) * lessonRate(); u.pitch = 1.06;
       speechText = step.text; speechFrac = -1;
       u.onboundary = e => { speechFrac = Math.min(1, e.charIndex / Math.max(1, step.text.length)); };
       u.onend = after(step);
@@ -954,11 +1152,11 @@ function speakBrowserItems(items, opts){
   return true;
 }
 function endSpeak(){
-  speakingNow = false; stopTalking(); resetButtons(); setCaption('');
+  speakingNow = false; paused = false; stopTalking(); resetButtons(); setCaption('');
   speechText = ''; speechFrac = -1;
 }
 function stopSpeak(){
-  speakingNow = false; speakToken++;
+  speakingNow = false; paused = false; speakToken++;
   try{ speechSynthesis.cancel(); }catch(e){}
   try{ ttsAudio.pause(); ttsAudio.removeAttribute('src'); }catch(e){}
   stopTalking(); resetButtons(); setCaption('');
@@ -1939,25 +2137,38 @@ function scenesFromExplain(explain){
     say: p.body.slice(0, 700), points: [],
   }));
 }
+/* v5.0 — the lesson is a PLAYER, like every video player: progress by scene,
+   play/pause, previous/next, captions, speed and full screen in one bar. */
+const CC_LS = 'sft_cc';
+function ccEnabled(){ return localStorage.getItem(CC_LS) !== '0'; }
+function applyCaptions(){ document.querySelectorAll('.deck').forEach(d => d.classList.toggle('nocc', !ccEnabled())); }
+function applyRateLabels(){ document.querySelectorAll('.ratebtn').forEach(b => { b.textContent = lessonRate() + '×'; }); }
+
 function renderScenes(container, scenes){
   if (!scenes.length) return;
   const deck = document.createElement('div');
-  deck.className = 'deck';
-  deck.innerHTML = '<div class="deck-head">🎬 ANIMATED LESSON<span class="dh-count"></span><span class="dh-spacer"></span>' +
-    '<button class="dh-btn playbtn" title="Play the animated lesson — the pictures move with the teacher\'s voice">' + ICON_PLAY + '</button>' +
-    '<button class="dh-btn fsbtn" title="Full screen (covers the whole screen)">' + ICON_FS + '</button>' +
-    '<button class="dh-btn closebtn" title="Exit full screen" style="display:none">' + ICON_X + '</button></div>' +
-    '<div class="slide"></div>' +
-    '<div class="fs-subtitle"></div>' +
-    '<div class="deck-nav"><button class="prev">‹</button><div class="deck-dots"></div><button class="next">›</button></div>';
+  deck.className = 'deck' + (ccEnabled() ? '' : ' nocc');
+  deck.innerHTML = '<div class="slide"></div><div class="fs-subtitle"></div>' +
+    '<div class="player">' +
+      '<div class="pbar" title="Scenes — tap to jump"></div>' +
+      '<div class="prow">' +
+        '<button class="pbtn playbtn" title="Play the animated lesson — the pictures move with the teacher\'s voice" aria-label="Play">' + ICON_PLAY + '</button>' +
+        '<button class="pbtn prev" title="Previous scene" aria-label="Previous scene">' + ICON_PREV + '</button>' +
+        '<button class="pbtn next" title="Next scene" aria-label="Next scene">' + ICON_NEXT + '</button>' +
+        '<span class="pcount"></span><span class="plabel">🎬 ANIMATED LESSON</span><span class="pspacer"></span>' +
+        '<button class="pbtn ccbtn' + (ccEnabled() ? ' on' : '') + '" title="Captions" aria-label="Captions">CC</button>' +
+        '<button class="pbtn ratebtn" title="Lesson speed" aria-label="Lesson speed">' + lessonRate() + '×</button>' +
+        '<button class="pbtn fsbtn" title="Full screen (covers the whole screen)" aria-label="Full screen">' + ICON_FS + '</button>' +
+        '<button class="pbtn closebtn" title="Exit full screen" aria-label="Exit full screen" style="display:none">' + ICON_X + '</button>' +
+      '</div></div>';
   // Sastika appears in a corner bubble during full-screen lessons, speaking live
   const pip = makePortrait(document.createElement('canvas'));
   pip.className = 'fs-teacher';
   deck.appendChild(pip);
   const slideEl = deck.querySelector('.slide');
-  const dots = deck.querySelector('.deck-dots');
-  const counter = deck.querySelector('.dh-count');
-  scenes.forEach(()=>{ const i=document.createElement('i'); dots.appendChild(i); });
+  const bar = deck.querySelector('.pbar');
+  const counter = deck.querySelector('.pcount');
+  scenes.forEach((s, i) => { const seg = document.createElement('i'); seg.dataset.i = i; seg.title = s.title || ('Scene ' + (i+1)); bar.appendChild(seg); });
   let cur = -1, painting = null;
   const isPage = i => !!(scenes[i] && scenes[i].visual && scenes[i].visual.type === 'page');
   function show(n){
@@ -1966,8 +2177,8 @@ function renderScenes(container, scenes){
     cur = want;
     slideEl.innerHTML = sceneMarkup(scenes[cur]);
     painting = hydrateBookPages(slideEl);      // real textbook pages draw themselves in
-    dots.querySelectorAll('i').forEach((d,i)=>d.classList.toggle('on', i===cur));
-    counter.textContent = ' ' + (cur+1) + ' / ' + scenes.length;
+    bar.querySelectorAll('i').forEach((d,i)=>{ d.classList.toggle('on', i===cur); d.classList.toggle('done', i<cur); });
+    counter.textContent = (cur+1) + ' / ' + scenes.length;
     deck.querySelector('.prev').disabled = cur===0;
     deck.querySelector('.next').disabled = cur===scenes.length-1;
   }
@@ -1975,6 +2186,19 @@ function renderScenes(container, scenes){
   function userGo(n){ if (speakingNow) stopSpeak(); show(n); }
   deck.querySelector('.prev').onclick = ()=>userGo(cur-1);
   deck.querySelector('.next').onclick = ()=>userGo(cur+1);
+  bar.addEventListener('click', e => { const seg = e.target.closest('i'); if (seg) userGo(+seg.dataset.i); });
+  deck.querySelector('.ccbtn').onclick = (e) => {
+    localStorage.setItem(CC_LS, ccEnabled() ? '0' : '1');
+    applyCaptions();
+    document.querySelectorAll('.ccbtn').forEach(b => b.classList.toggle('on', ccEnabled()));
+    const sw = document.getElementById('ccToggle');
+    if (sw){ sw.classList.toggle('on', ccEnabled()); sw.setAttribute('aria-checked', String(ccEnabled())); }
+  };
+  deck.querySelector('.ratebtn').onclick = () => {
+    const steps = [1, 1.25, 1.5, 0.75];
+    const next = steps[(steps.indexOf(lessonRate()) + 1) % steps.length];
+    setLessonRate(next);
+  };
 
   /* full screen: native API on laptop/Android, fixed overlay everywhere
      (iPhone Safari cannot fullscreen a div) — both give a whole-screen deck */
@@ -2027,11 +2251,13 @@ function renderScenes(container, scenes){
       ready: isPage(i) ? () => painting : null,
       hold: isPage(i) ? PAGE_HOLD_MS : 0,
     }));
-    speakItems(items, { btn: playbtn, stopLabel: ICON_STOP, rate: 0.95,
+    speakItems(items, { btn: playbtn, stopLabel: ICON_PAUSE, rate: 0.95,
                         onEnd: () => setFs(false) });
   }
+  // play / pause / resume — the player's own button never "stops"; stopping is
+  // what taking the deck out of full screen or moving a scene by hand does
   function togglePresent(){
-    if (speakingNow) stopSpeak();
+    if (speakingNow && playbtn.classList.contains('playing')){ if (paused) resumeSpeak(); else pauseSpeak(); }
     else present();
   }
   playbtn.onclick = togglePresent;
@@ -2323,6 +2549,8 @@ function renderAnswerBody(bodyEl, explain){
 }
 
 function addUserMsg(text, photoUrl){
+  const row = document.createElement('div');
+  row.className = 'urow';
   const m = document.createElement('div');
   m.className = 'msg user'; m.textContent = text;
   if (photoUrl){
@@ -2336,9 +2564,92 @@ function addUserMsg(text, photoUrl){
   cp.className = 'copyq copyi';
   tools.appendChild(wireCopy(cp, () => text, 'Copy', 'Copy this question'));
   m.appendChild(tools);
-  feed.appendChild(m);
+  row.appendChild(m);
+  feed.appendChild(row);
+  document.body.classList.add('has-chat');     // the empty-state hero steps aside
 }
-function scrollDown(){ requestAnimationFrame(()=>window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'})); }
+// the FEED scrolls, not the page — the composer stays pinned underneath it
+function scrollDown(){ requestAnimationFrame(()=>feed.scrollTo({top:feed.scrollHeight, behavior:'smooth'})); }
+
+/* ---- v5.0: "Check your understanding" — 3 questions after every answer ---- */
+function parseQuiz(text){
+  const out = [];
+  for (const raw of (text || '').split('\n')){
+    const ln = raw.trim();
+    if (!ln) continue;
+    const parts = ln.split('|').map(s => s.trim()).filter(Boolean);
+    if (parts.length < 4) continue;
+    let q = '', ans = '', why = '';
+    const opts = [];
+    for (const p of parts){
+      let m;
+      if ((m = /^Q\s*\d*\s*[:.)-]\s*(.+)$/i.exec(p))) q = m[1];
+      else if ((m = /^\(?([A-D])\s*[).:-]\s*(.+)$/i.exec(p))) opts.push({ k: m[1].toUpperCase(), t: m[2] });
+      else if ((m = /^answer\s*[:=]?\s*\(?([A-D])/i.exec(p))) ans = m[1].toUpperCase();
+      else if ((m = /^why\s*[:=]\s*(.+)$/i.exec(p))) why = m[1];
+      else if (!q) q = p.replace(/^\d+\s*[:.)-]\s*/, '');
+    }
+    // the prompt's own example (plants) must never be parroted into a lesson
+    if (/which part of a plant makes food/i.test(q)) continue;
+    if (q && opts.length >= 2 && opts.some(o => o.k === ans)) out.push({ q, opts, ans, why });
+  }
+  return out.slice(0, 5);
+}
+function renderQuiz(container, quiz){
+  if (!quiz || !quiz.length) return;
+  const box = document.createElement('div');
+  box.className = 'quiz';
+  box.innerHTML = '<div class="quiz-h">✅ Check your understanding<span class="qn">' + quiz.length + ' question' + (quiz.length > 1 ? 's' : '') + '</span></div>';
+  let answered = 0, right = 0;
+  quiz.forEach((it, qi) => {
+    const d = document.createElement('div');
+    d.className = 'qq';
+    d.innerHTML = '<p class="qt">' + (qi + 1) + '. ' + esc(it.q) + '</p><div class="qopts"></div>';
+    const og = d.querySelector('.qopts');
+    it.opts.forEach(o => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'qopt'; b.dataset.k = o.k;
+      b.innerHTML = '<b>' + o.k + '</b><span>' + esc(o.t) + '</span>';
+      b.onclick = () => {
+        og.querySelectorAll('.qopt').forEach(x => { x.disabled = true; if (x.dataset.k === it.ans) x.classList.add('right'); });
+        const ok = o.k === it.ans;
+        if (!ok) b.classList.add('wrong'); else right++;
+        const w = document.createElement('p');
+        w.className = 'qwhy';
+        w.textContent = (ok ? '✔ Correct. ' : '✘ Not quite — the answer is ' + it.ans + '. ') + (it.why || '');
+        d.appendChild(w);
+        if (++answered === quiz.length){
+          const s = document.createElement('div');
+          s.className = 'qscore';
+          s.textContent = right === quiz.length ? '🌟 ' + right + ' out of ' + quiz.length + ' — excellent, you have understood it!'
+                        : right >= quiz.length / 2 ? '👍 ' + right + ' out of ' + quiz.length + ' — good, read the answer once more for the rest.'
+                        : '📖 ' + right + ' out of ' + quiz.length + ' — let\'s play the lesson again and try once more.';
+          box.appendChild(s);
+        }
+      };
+      og.appendChild(b);
+    });
+    box.appendChild(d);
+  });
+  container.appendChild(box);
+}
+/* One reply, three parts: [EXPLAIN] prose, [SCENES] lesson, [QUIZ] check.
+   Old answers ([SLIDES], no quiz) still split correctly. */
+function splitReply(raw){
+  const ei = raw.indexOf('[EXPLAIN]');
+  const sci = raw.indexOf('[SCENES]'), sli = raw.indexOf('[SLIDES]'), qi = raw.indexOf('[QUIZ]');
+  const si = sci !== -1 ? sci : sli;
+  const ends = [si, qi].filter(i => i !== -1);
+  const explainEnd = ends.length ? Math.min(...ends) : -1;
+  let explain = ei !== -1 ? raw.slice(ei + 9, explainEnd !== -1 ? explainEnd : undefined)
+                          : raw.slice(0, explainEnd !== -1 ? explainEnd : undefined);
+  explain = explain.replace(/\[END\]\s*$/, '').trim();
+  let scenesText = si !== -1 ? raw.slice(si + 8, (qi > si) ? qi : undefined) : '';
+  scenesText = scenesText.replace(/\[END\][\s\S]*$/, '');
+  let quizText = qi !== -1 ? raw.slice(qi + 6, (si > qi) ? si : undefined) : '';
+  quizText = quizText.replace(/\[END\][\s\S]*$/, '');
+  return { explain, scenesText, quizText, legacySlides: sci === -1 && sli !== -1, si };
+}
 
 function sourceChips(list){
   return '<div class="sources">' + list.map(s =>
@@ -2348,7 +2659,7 @@ function sourceChips(list){
 
 /* an answer's interactive parts (deck + play buttons) — used for live
    answers AND for chats restored from storage */
-function wireAnswer(extra, explain, scenes, sources){
+function wireAnswer(extra, explain, scenes, sources, quiz){
   // an answer must never arrive without its animated lesson
   if ((!scenes || !scenes.length) && explain) scenes = scenesFromExplain(explain);
   // ...and when the answer cites a real book page, the lesson shows it
@@ -2389,6 +2700,7 @@ function wireAnswer(extra, explain, scenes, sources){
     acts.appendChild(wireCopy(cp, () => plainCopy(explain), 'Copy answer', 'Copy the whole answer'));
   }
   extra.appendChild(acts);
+  renderQuiz(extra, quiz);                    // the learning loop: check, then feedback
 }
 
 /* ---- persistence: chats survive reloads and app updates ---- */
@@ -2427,7 +2739,7 @@ function ask(){
 
   const bot = document.createElement('div');
   bot.className = 'msg bot';
-  bot.innerHTML = '<div class="who">S. SASTIKA</div><div class="srcbox"></div>' +
+  bot.innerHTML = '<div class="who">S. Sastika</div><div class="srcbox"></div>' +
     '<div class="body"><span class="typing"><i></i><i></i><i></i></span></div><div class="extra"></div>';
   feed.appendChild(bot);
   scrollDown();
@@ -2451,14 +2763,9 @@ function ask(){
     const now = Date.now();
     if (!force && now - lastRender < 250) return;
     lastRender = now;
-    let explain = raw;
-    // [SCENES] is the current format; [SLIDES] still accepted from old answers
-    let si = raw.indexOf('[SCENES]');
-    if (si === -1) si = raw.indexOf('[SLIDES]');
-    const ei = raw.indexOf('[EXPLAIN]');
-    if (ei !== -1) explain = raw.slice(ei + 9);
-    if (si !== -1) explain = (ei !== -1 ? raw.slice(ei + 9, si) : raw.slice(0, si));
-    explain = explain.replace(/\[END\]\s*$/,'').trim();
+    // [SCENES] is the current format; [SLIDES] still accepted from old answers;
+    // [QUIZ] follows the scenes — none of them belong in the prose
+    const { explain, si } = splitReply(raw);
     bodyEl.innerHTML = md(explain) || '<span class="typing"><i></i><i></i><i></i></span>';
     // the scenes stream AFTER the text: show that the lesson is being animated
     if (si !== -1){
@@ -2576,23 +2883,19 @@ function ask(){
     busy = false; sendBtn.disabled = false;
     document.getElementById('tstatus').textContent = 'Ask me anything from your textbooks!';
     if (failed || !raw) return;
-    let explain = raw;
-    const ei = raw.indexOf('[EXPLAIN]');
-    const sci = raw.indexOf('[SCENES]'), sli = raw.indexOf('[SLIDES]');
-    const si = sci !== -1 ? sci : sli;
-    if (ei !== -1) explain = si !== -1 ? raw.slice(ei+9, si) : raw.slice(ei+9);
-    else if (si !== -1) explain = raw.slice(0, si);
-    explain = explain.replace(/\[END\]\s*$/,'').trim();
+    const { explain, scenesText, quizText, legacySlides } = splitReply(raw);
     history.push({ role:'user', content: question || ('My photo said: ' + ocrText.slice(0, 600)) });
     history.push({ role:'assistant', content: explain.slice(0, 3000) });
     if (slideNote){ slideNote.remove(); slideNote = null; }
     renderAnswerBody(bodyEl, explain);        // final pass: each part gets its own copy button
-    const tail = si !== -1 ? raw.slice(si + 8).replace(/\[END\][\s\S]*$/,'') : '';
-    const scenes = sci !== -1 ? parseScenes(tail)
-                 : sli !== -1 ? slidesToScenes(parseSlides(tail)) : [];
-    wireAnswer(extra, explain, scenes, srcData);
+    const scenes = !scenesText ? [] : legacySlides ? slidesToScenes(parseSlides(scenesText)) : parseScenes(scenesText);
+    const quiz = parseQuiz(quizText);
+    const ts = Date.now();
+    bot.dataset.ts = ts;                       // Recent lessons jump here
+    wireAnswer(extra, explain, scenes, srcData, quiz);
     saveChat({ q: question || '📷 (photo question)', photo: photoThumbSmall,
-      ocr: ocrText.slice(0, 1000), explain, scenes, sources: srcData, ts: Date.now() });
+      ocr: ocrText.slice(0, 1000), explain, scenes, quiz, sources: srcData, ts });
+    if (typeof renderRecent === 'function') renderRecent();
     scrollDown();
   }
 }
@@ -2604,7 +2907,8 @@ function ask(){
     addUserMsg(rec.q, rec.photo || '');
     const bot = document.createElement('div');
     bot.className = 'msg bot';
-    bot.innerHTML = '<div class="who">S. SASTIKA</div><div class="srcbox"></div>' +
+    bot.dataset.ts = rec.ts || '';
+    bot.innerHTML = '<div class="who">S. Sastika</div><div class="srcbox"></div>' +
       '<div class="body"></div><div class="extra"></div>';
     if (rec.ocr){
       const line = document.createElement('div');
@@ -2617,7 +2921,7 @@ function ask(){
     // old saved chats hold "slides"; new ones hold "scenes" — both replay
     wireAnswer(bot.querySelector('.extra'), rec.explain || '',
       (rec.scenes && rec.scenes.length) ? rec.scenes : slidesToScenes(rec.slides || []),
-      rec.sources);
+      rec.sources, rec.quiz || []);
     feed.appendChild(bot);
   }
   for (const rec of past.slice(-3)){
@@ -2626,11 +2930,16 @@ function ask(){
   }
   if (past.length) scrollDown();
 }
-document.getElementById('clearChat').addEventListener('click', () => {
-  if (!confirm('Clear all saved chat history on this device?')) return;
-  localStorage.removeItem(CHATS_LS);
-  location.reload();
-});
+{
+  const clear = () => {
+    if (!confirm('Clear all saved chat history on this device?')) return;
+    localStorage.removeItem(CHATS_LS);
+    location.hash = '#ask';
+    location.reload();
+  };
+  document.getElementById('clearChat').addEventListener('click', clear);
+  document.getElementById('clearChat2').addEventListener('click', clear);
+}
 {
   const sel = document.getElementById('classSel');
   const saved = localStorage.getItem('sft_class');
@@ -2774,18 +3083,243 @@ function refreshStatus(){
     const photo = s.visionEngineName && bare(s.visionEngineName) !== bare(chatName)
       ? ' <span class="pill-photo" title="Engine used to read a photographed question">📷 ' +
         esc(bare(s.visionEngineName)) + '</span>' : '';
-    pill.innerHTML = 'Engine: <b>' + esc(chatName) + '</b>' + photo;
+    pill.innerHTML = '<span class="dot"></span><span class="etxt">Engine: <b>' + esc(chatName) + '</b>' + photo + '</span>';
+    const rowNote = document.getElementById('engineRowNote');
+    if (rowNote) rowNote.textContent = 'Answers: ' + chatName +
+      (s.visionEngineName ? ' · Photos: ' + bare(s.visionEngineName) : '');
     const line = document.getElementById('statusline');
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
-    // read the version from the badge so the footer can never drift from it
-    const ver = (document.getElementById('verBadge') || {}).textContent || '';
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
-      (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet') +
-      ' · IBI Skilled Foundations Teacher ' + ver;
-  }).catch(()=>{ document.getElementById('statusline').textContent = 'status unavailable'; });
+      (chunks ? chunks.toLocaleString() + ' passages studied' : 'index not built yet');
+    // About: app and backend carry ONE version number per release. A bare
+    // number mismatch is a grey note; a MISSING FEATURE (keyed on the
+    // server's own list, never on the number) is the amber warning.
+    const ver = ((document.getElementById('verBadge') || {}).textContent || '').replace(/^v/, '');
+    const be = String(s.version || '?');
+    const feats = s.features || [];
+    const missing = ['quiz', 'library'].filter(f => !feats.includes(f));
+    const about = document.getElementById('aboutLine');
+    if (about) about.innerHTML = '<b>IBI Skilled Foundations Teacher</b>' +
+      'App v' + esc(ver) + ' · Backend v' + esc(be) + ' ' +
+      (be === ver ? '<span class="ok">✓ in step</span>'
+                  : '<span class="note">(restart the teacher server to bring it to v' + esc(ver) + ' when convenient)</span>') +
+      (missing.length ? '<br><span class="warn">⚠ The server needs updating — ' + missing.join(' and ') + ' not available yet.</span>' : '');
+  }).catch(()=>{
+    document.getElementById('statusline').textContent = 'status unavailable';
+    const pill = document.getElementById('enginePill');
+    pill.classList.add('off'); pill.innerHTML = '<span class="dot"></span><span class="etxt">Engine: <b>unreachable</b></span>';
+  });
 }
 refreshStatus();
 setInterval(refreshStatus, 60000);
+
+/* ═══════════════════════ v5.0 — app shell: views, settings, library, recent, PWA ═══════════════════════ */
+
+/* ---- views: sidebar on laptops, tab bar on phones, the hash remembers where you were ---- */
+const VIEWS = ['ask', 'library', 'recent', 'settings'];
+function showView(v){
+  if (!VIEWS.includes(v)) v = 'ask';
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'view-' + v));
+  document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  if (location.hash !== '#' + v) history.replaceState(null, '', '#' + v);
+  if (v === 'library') loadLibrary();
+  if (v === 'recent') renderRecent();
+}
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
+document.getElementById('newChat').addEventListener('click', () => {
+  showView('ask'); qEl.focus(); scrollDown();
+});
+
+/* ---- theme: System / Light / Dark (System follows the phone, live) ---- */
+const THEME_LS = 'sft_theme';
+const darkMq = window.matchMedia('(prefers-color-scheme: dark)');
+function themeChoice(){ const t = localStorage.getItem(THEME_LS); return ['system','light','dark'].includes(t) ? t : 'system'; }
+function applyTheme(){
+  const k = themeChoice();
+  const dark = k === 'dark' || (k === 'system' && darkMq.matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = dark ? '#14102a' : '#7F00FF';
+  document.querySelectorAll('#themeSeg button').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+}
+document.getElementById('themeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  localStorage.setItem(THEME_LS, b.dataset.k); applyTheme();
+});
+(darkMq.addEventListener ? darkMq.addEventListener('change', applyTheme) : darkMq.addListener(applyTheme));
+applyTheme();
+
+/* ---- text size (phones): Default / Large / Extra large / Huge / Maximum ---- */
+const TS_LS = 'sft_ts';
+const TEXT_SIZES = { default:1, large:1.125, xl:1.25, huge:1.5, max:1.75 };
+function applyTextSize(k){
+  if (!TEXT_SIZES[k]) k = 'default';
+  document.documentElement.style.setProperty('--ts', TEXT_SIZES[k]);
+  document.documentElement.dataset.ts = k;
+  document.querySelectorAll('#tsChips button').forEach(b => b.classList.toggle('on', b.dataset.k === k));
+}
+document.getElementById('tsChips').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  localStorage.setItem(TS_LS, b.dataset.k); applyTextSize(b.dataset.k);
+});
+applyTextSize(localStorage.getItem(TS_LS) || 'default');
+
+/* ---- lesson speed + captions (shared with every player bar) ---- */
+function setLessonRate(r){
+  localStorage.setItem(RATE_LS, String(r));
+  applyRateLabels();
+  document.querySelectorAll('#rateChips button').forEach(b => b.classList.toggle('on', parseFloat(b.dataset.k) === lessonRate()));
+  if (speakingNow){ try { ttsAudio.playbackRate = lessonRate(); } catch(e){} }
+}
+document.getElementById('rateChips').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  setLessonRate(parseFloat(b.dataset.k));
+});
+setLessonRate(lessonRate());
+{
+  const sw = document.getElementById('ccToggle');
+  const paint = () => { sw.classList.toggle('on', ccEnabled()); sw.setAttribute('aria-checked', String(ccEnabled())); };
+  sw.addEventListener('click', () => {
+    localStorage.setItem(CC_LS, ccEnabled() ? '0' : '1');
+    applyCaptions(); paint();
+    document.querySelectorAll('.ccbtn').forEach(b => b.classList.toggle('on', ccEnabled()));
+  });
+  paint();
+}
+
+/* ---- Library: class → subject → book → chapter, straight from the index ---- */
+let libData = null, libClass = 0, libLoading = false;
+const SUBJECT_ICON = { science:'🔬', mathematics:'➗', english:'📖', hindi:'🪔', 'social science':'🌏', history:'🏛️', geography:'🗺️',
+  economics:'💹', 'political science':'🏛️', physics:'⚛️', chemistry:'🧪', biology:'🧬', accountancy:'📒', 'business studies':'💼',
+  arts:'🎨', 'vocational education':'🛠️', 'physical education and well being':'🏃', sanskrit:'📜', urdu:'📖', psychology:'🧠', sociology:'👥',
+  'computer science':'💻', 'informatics practices':'💻', 'home science':'🏠', 'environmental studies':'🌱', 'the world around us':'🌱' };
+const chapNo = s => { const m = /(\d+)/.exec(s || ''); return m ? +m[1] : 0; };
+async function loadLibrary(){
+  if (libData || libLoading) return;
+  libLoading = true;
+  const note = document.getElementById('libNote');
+  try {
+    libData = await fetch('/api/library').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  } catch(e) {
+    libLoading = false;
+    note.textContent = e.message === '404'
+      ? 'The Library needs the teacher server at v5.0 — restart it on the laptop to switch this on.'
+      : 'Could not load the library — is the teacher server reachable?';
+    return;
+  }
+  const saved = +localStorage.getItem('sft_libclass') || +localStorage.getItem('sft_class') || 0;
+  const classes = libData.classes || [];
+  libClass = classes.some(c => c.class === saved) ? saved : (classes[0] ? classes[0].class : 0);
+  const row = document.getElementById('libClasses');
+  row.innerHTML = '';
+  for (const c of classes){
+    const b = document.createElement('button');
+    b.className = 'cchip'; b.textContent = 'Class ' + c.class; b.dataset.c = c.class;
+    b.onclick = () => { libClass = c.class; localStorage.setItem('sft_libclass', String(c.class)); renderLib(); };
+    row.appendChild(b);
+  }
+  renderLib();
+}
+function renderLib(){
+  const root = document.getElementById('libRoot');
+  const note = document.getElementById('libNote');
+  document.querySelectorAll('#libClasses .cchip').forEach(b => b.classList.toggle('on', +b.dataset.c === libClass));
+  const cls = (libData.classes || []).find(c => c.class === libClass);
+  root.innerHTML = '';
+  if (!cls){ note.textContent = 'No textbooks indexed yet.'; return; }
+  const nBooks = cls.subjects.reduce((n, s) => n + s.books.length, 0);
+  const nCh = cls.subjects.reduce((n, s) => n + s.books.reduce((m, b) => m + b.chapters.length, 0), 0);
+  note.textContent = 'Class ' + libClass + ' · ' + cls.subjects.length + ' subjects · ' + nBooks + ' books · ' + nCh + ' chapters. Tap Explain for a full lesson, Questions for the exercises, or open the real book.';
+  cls.subjects.forEach((sub, si) => {
+    const d = document.createElement('details');
+    d.className = 'lib-sub';
+    if (si === 0) d.open = true;
+    const icon = SUBJECT_ICON[sub.subject.toLowerCase()] || '📘';
+    const chapters = sub.books.reduce((m, b) => m + b.chapters.length, 0);
+    d.innerHTML = '<summary>' + icon + ' ' + esc(sub.subject) + '<span class="n">' + chapters + ' chapters</span></summary>';
+    for (const book of sub.books){
+      const bk = document.createElement('div');
+      bk.className = 'lib-book';
+      bk.innerHTML = '<h4>📕 ' + esc(book.book) + '</h4>';
+      for (const ch of book.chapters){
+        const row = document.createElement('div');
+        row.className = 'chap';
+        const n = chapNo(ch.chapter);
+        row.innerHTML = '<div class="ct"><b>' + esc(ch.chapter) + (ch.pages ? ' <span style="font-weight:600;color:var(--text-3)">· ' + ch.pages + ' pages</span>' : '') + '</b>' +
+          (ch.opening ? '<small title="' + esc(ch.opening) + '">' + esc(ch.opening) + '</small>' : '') + '</div>' +
+          '<div class="cb"><button class="sbtn primary" data-act="explain">Explain</button>' +
+          '<button class="sbtn" data-act="questions">Questions</button>' +
+          '<a class="sbtn" target="_blank" rel="noopener" href="/api/book?class=' + libClass + '&file=' + encodeURIComponent(ch.file) + '">Open book ↗</a></div>';
+        const multi = sub.books.length > 1 ? ' from ' + book.book : '';
+        row.querySelector('[data-act="explain"]').onclick = () =>
+          askFrom(n ? 'Explain Class ' + libClass + ' ' + sub.subject + ' Chapter ' + n + multi + ' in detail'
+                    : 'Explain ' + ch.chapter + ' of Class ' + libClass + ' ' + sub.subject + multi + ' in detail', libClass);
+        row.querySelector('[data-act="questions"]').onclick = () =>
+          askFrom('List all the questions of Class ' + libClass + ' ' + sub.subject + ' Chapter ' + (n || ch.chapter) + multi, libClass);
+        bk.appendChild(row);
+      }
+      d.appendChild(bk);
+    }
+    root.appendChild(d);
+  });
+}
+// a Library tap becomes a normal question — same pipeline, same lesson
+function askFrom(text, cls){
+  const sel = document.getElementById('classSel');
+  if (cls && sel.querySelector('option[value="' + cls + '"]')){ sel.value = String(cls); localStorage.setItem('sft_class', sel.value); }
+  showView('ask');
+  qEl.value = text; autoSize();
+  ask();
+}
+
+/* ---- Recent lessons: what is saved on this device, newest first ---- */
+function renderRecent(){
+  const list = document.getElementById('recentList');
+  if (!list) return;
+  const past = loadChats().slice().reverse();
+  list.innerHTML = '';
+  if (!past.length){ list.innerHTML = '<div class="rempty">No lessons yet — ask Sastika something and it will appear here.</div>'; return; }
+  const fmt = ts => { const d = new Date(ts || 0); return isNaN(d) ? '' : d.toLocaleDateString('en-IN', { day:'numeric', month:'short' }) + ' · ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }); };
+  for (const rec of past){
+    const b = document.createElement('button');
+    b.className = 'ritem'; b.type = 'button';
+    const src = (rec.sources && rec.sources[0]) || null;
+    const icon = src ? (SUBJECT_ICON[String(src.subject || '').toLowerCase()] || '📘') : (rec.photo ? '📷' : '💬');
+    b.innerHTML = '<span class="ri">' + icon + '</span><span class="rt"><b>' + esc(rec.q || '') + '</b><small>' +
+      (src ? esc('Class ' + src.class + ' · ' + src.subject + ' · ' + src.chapter) + ' · ' : '') + fmt(rec.ts) +
+      (rec.quiz && rec.quiz.length ? ' · ' + rec.quiz.length + '-question quiz' : '') + '</small></span>' +
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+    b.onclick = () => {
+      showView('ask');
+      const el = feed.querySelector('.msg.bot[data-ts="' + rec.ts + '"]');
+      if (el){ el.scrollIntoView({ behavior:'smooth', block:'start' }); el.style.outline = '3px solid var(--violet-2)'; setTimeout(() => el.style.outline = '', 1600); }
+    };
+    list.appendChild(b);
+  }
+}
+
+/* ---- Install as an app (PWA) ---- */
+{
+  let deferred = null;
+  const btn = document.getElementById('installBtn'), noteEl = document.getElementById('installNote');
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; btn.disabled = false; });
+  if (standalone){ btn.textContent = 'Installed ✓'; btn.disabled = true; noteEl.textContent = 'You are using the installed app.'; }
+  btn.addEventListener('click', async () => {
+    if (deferred){ deferred.prompt(); try { await deferred.userChoice; } catch(e){} deferred = null; return; }
+    noteEl.textContent = isIOS ? 'On iPhone: tap Share (the square with an arrow), then "Add to Home Screen".'
+                               : 'In your browser menu (⋮) choose "Install app" or "Add to Home screen".';
+  });
+  window.addEventListener('appinstalled', () => { btn.textContent = 'Installed ✓'; btn.disabled = true; });
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  }
+}
+
+/* ---- start on the section the link asked for ---- */
+showView((location.hash || '#ask').slice(1));
 </script>
 </body>
 </html>
