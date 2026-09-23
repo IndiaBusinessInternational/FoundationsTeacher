@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   IBI Skilled Foundations Teacher — service worker (v5.0)
+   IBI Skilled Foundations Teacher — service worker (v6.0)
 
    Strategy
    ────────
@@ -17,7 +17,7 @@
    shipping old JS under a new version badge. Always bypass the HTTP cache here.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION     = 'v5.0';
+const VERSION     = 'v6.0';
 const SHELL_CACHE = 'ibiteacher-shell-' + VERSION;
 const ASSET_CACHE = 'ibiteacher-assets-' + VERSION;
 
