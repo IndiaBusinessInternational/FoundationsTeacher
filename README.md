@@ -1,4 +1,6 @@
-# IBI Skilled Foundations Teacher — v6.0
+# IBI Skilled Foundations Teacher — v6.1
+
+v6.1 (6 Oct 2026): photo questions are read on `qwen3.5:9b` (the graphics-card model) and photos are sent at 1280 px — the 4B runs on the processor since 15 Sep 2026 and took ~2 minutes a photo. App and server are both 6.1.
 
 **Live:** https://teacher.indiabusinessinternational.online
 
