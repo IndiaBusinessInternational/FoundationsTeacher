@@ -1,4 +1,6 @@
-# IBI Skilled Foundations Teacher — v6.1
+# IBI Skilled Foundations Teacher — v6.2
+
+v6.2 (7 Oct 2026): the laptop now runs ONE model, **Qwen 3.8 27B** (`qwen3.8:27b`, Q4_K_M) for both photos and the backup lessons. It writes about 1.1–1.2 tokens a second, so the app's labels now say so honestly (a photo ≈ 1–2 minutes to read; a full lesson written by the laptop when the cloud teacher is busy ≈ 20–40 minutes). Server: laptop-engine timeouts budgeted by output tokens + cold load (answers 5 → 20 min idle, photo reading 4 → 20 min, photo transcription capped at 1000 tokens), an answer still being written is kept 90 minutes, and the page waits up to ~60 minutes to collect an interrupted answer. App and server are both 6.2.
 
 v6.1 (6 Oct 2026): photo questions are read on `qwen3.5:9b` (the graphics-card model) and photos are sent at 1280 px — the 4B runs on the processor since 15 Sep 2026 and took ~2 minutes a photo. App and server are both 6.1.
 

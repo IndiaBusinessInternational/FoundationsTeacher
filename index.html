@@ -608,7 +608,7 @@ button#send:disabled{opacity:.4;cursor:default;box-shadow:none}
 <aside class="side" aria-label="Main navigation">
   <div class="brand">
     <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-    <div class="brand-t"><h1>IBI Skilled Foundations Teacher</h1><small>NCERT Class 1–12 <span class="ver-badge" id="verBadge" title="v6.1 — photo questions are read by the bigger on-device model (qwen3.5:9b) in about half a minute. v6.0 — Expert teaching you can SEE and TRUST. Lessons follow an expert teacher's order (why it matters → what you know → step by step → HOW IT WORKS → example → common mistake → remember) written by Gemini with the laptop as backup; a real NCERT official video of how it works when one matches; animated lessons where things MOVE through the system (blood, water, current); LEARNER PROFILES on this device (name, class, sticker, language, daily goal) with English or Tamil answers; MY PROGRESS — streak, today's goal, lessons this week and chapter mastery from Needs practice to Mastered; 10-question PRACTICE TESTS from the Library or Progress, Try again and Explain what I got wrong; Save ⭐, search and delete in Recent; 👍 👎 and Report a mistake; Print notes / save as PDF; child-safety rules, a caring helpline line and a personal-details warning; owner-only AI settings behind the CEO password; browser security headers; per-address limits; privacy notice; offline notice. v5.0 — A professional learning app, built to current edtech standards. LIGHT learning surface with a dark mode that follows your phone; Nunito type at 16px with nothing under 12px; a sidebar (Ask · Library · Recent · Settings) that becomes a bottom tab bar on phones; the question box pinned to the bottom of the conversation; S. Sastika as a compact live portrait in the conversation header; a LIBRARY that browses every textbook the teacher has read (class → subject → book → chapter) with one-tap Explain / Questions / Open the book; RECENT lessons you can return to; a real lesson PLAYER (progress by scene, play/pause, previous/next, captions, speed, full screen); CHECK YOUR UNDERSTANDING — three questions after every answer with instant feedback; a SETTINGS screen (theme, text size, voice, lesson speed, captions, AI engine, install) with an About line showing App and Backend versions in step (backend 5.0); installable as an app (PWA) and a sign-in page in the same design. v4.6 — The laptop's own brain is new, and there is now only one of it (qwen3.5:4b reads photos and writes lessons). v4.5 — The textbook picture stays on screen long enough to be studied. v4.4 — The textbook slide shows the actual FIGURE. v4.3 — Copy any single part of an answer. v4.2 — Copy buttons on questions and answers. v4.1 — Pick the engine per job; photos can go to the cloud. v4.0 — Animated video lessons and multi-engine settings.">v6.1</span></small></div>
+    <div class="brand-t"><h1>IBI Skilled Foundations Teacher</h1><small>NCERT Class 1–12 <span class="ver-badge" id="verBadge" title="v6.2 — the laptop's own AI is now ONE bigger model, Qwen 3.8 27B (qwen3.8:27b). It is careful but slow — about one word a second: a photographed question takes about 1–2 minutes to read, and if the cloud teacher is busy and the laptop writes the lesson itself, a full lesson can take 20–40 minutes (keep the page open or come back — the answer is kept safe). v6.1 — photo questions were read by the then-new qwen3.5:9b in about half a minute; photos sent at 1280 px. v6.0 — Expert teaching you can SEE and TRUST. Lessons follow an expert teacher's order (why it matters → what you know → step by step → HOW IT WORKS → example → common mistake → remember) written by Gemini with the laptop as backup; a real NCERT official video of how it works when one matches; animated lessons where things MOVE through the system (blood, water, current); LEARNER PROFILES on this device (name, class, sticker, language, daily goal) with English or Tamil answers; MY PROGRESS — streak, today's goal, lessons this week and chapter mastery from Needs practice to Mastered; 10-question PRACTICE TESTS from the Library or Progress, Try again and Explain what I got wrong; Save ⭐, search and delete in Recent; 👍 👎 and Report a mistake; Print notes / save as PDF; child-safety rules, a caring helpline line and a personal-details warning; owner-only AI settings behind the CEO password; browser security headers; per-address limits; privacy notice; offline notice. v5.0 — A professional learning app, built to current edtech standards. LIGHT learning surface with a dark mode that follows your phone; Nunito type at 16px with nothing under 12px; a sidebar (Ask · Library · Recent · Settings) that becomes a bottom tab bar on phones; the question box pinned to the bottom of the conversation; S. Sastika as a compact live portrait in the conversation header; a LIBRARY that browses every textbook the teacher has read (class → subject → book → chapter) with one-tap Explain / Questions / Open the book; RECENT lessons you can return to; a real lesson PLAYER (progress by scene, play/pause, previous/next, captions, speed, full screen); CHECK YOUR UNDERSTANDING — three questions after every answer with instant feedback; a SETTINGS screen (theme, text size, voice, lesson speed, captions, AI engine, install) with an About line showing App and Backend versions in step (backend 5.0); installable as an app (PWA) and a sign-in page in the same design. v4.6 — The laptop's own brain is new, and there is now only one of it (qwen3.5:4b reads photos and writes lessons). v4.5 — The textbook picture stays on screen long enough to be studied. v4.4 — The textbook slide shows the actual FIGURE. v4.3 — Copy any single part of an answer. v4.2 — Copy buttons on questions and answers. v4.1 — Pick the engine per job; photos can go to the cloud. v4.0 — Animated video lessons and multi-engine settings.">v6.2</span></small></div>
   </div>
   <button class="who-chip" id="sideWho" title="Who is learning — switch or add a learner"><span class="av">🙂</span><span class="nm">Learner</span></button>
   <button class="newq" id="newChat" title="Start a new question"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>New question</span></button>
@@ -875,7 +875,7 @@ button#send:disabled{opacity:.4;cursor:default;box-shadow:none}
     <label for="engineSel">Default engine</label>
     <select id="engineSel">
       <option value="auto">Auto — best available (cloud if any key is set)</option>
-      <option value="local">IBI Local — on-device, no key needed</option>
+      <option value="local">IBI Local — Qwen 3.8 27B on this laptop, no key needed (slow)</option>
       <option value="deepseek">DeepSeek</option>
       <option value="gemini">Gemini</option>
       <option value="openai">ChatGPT</option>
@@ -3289,10 +3289,11 @@ function ask(){
           } else if (j.video){
             videoData = j.video;
           } else if (j.status === 'fallback'){
-            document.getElementById('tstatus').textContent = '💻 The cloud teacher is busy — the laptop is answering…';
+            document.getElementById('tstatus').textContent = '💻 The cloud teacher is busy — the laptop (Qwen 3.8 27B) is answering. It is slow: a full lesson can take 20–40 minutes…';
           } else if (j.status === 'reading_photo'){
-            document.getElementById('tstatus').textContent = '📷 Reading your photo…';
-            bodyEl.innerHTML = '<span class="typing"><i></i><i></i><i></i></span> 📷 Reading your photo…';
+            const pmsg = VISION_LOCAL ? '📷 Reading your photo on the laptop (Qwen 3.8 27B) — about 1–2 minutes…' : '📷 Reading your photo…';
+            document.getElementById('tstatus').textContent = pmsg;
+            bodyEl.innerHTML = '<span class="typing"><i></i><i></i><i></i></span> ' + esc(pmsg);
           } else if (j.ocr){
             showOcr(j.ocr);
             document.getElementById('tstatus').textContent = '🤔 Thinking…';
@@ -3324,13 +3325,14 @@ function ask(){
   });
 
   /* A phone call (or switching apps) kills the stream on mobile while the
-     laptop is still writing the answer. The server keeps every answer for
-     30 minutes under its askId — poll it until the answer is complete. */
+     laptop is still writing the answer. The server keeps an answer under its
+     askId (90 min while it is being written, 30 min once done) — poll it until
+     the answer is complete. */
   async function recoverAnswer(){
     if (!askId) return false;
     document.getElementById('tstatus').textContent = '📶 Reconnecting…';
     if (!raw) bodyEl.innerHTML = '<span class="typing"><i></i><i></i><i></i></span> 📶 Connection was interrupted — collecting your answer…';
-    for (let i = 0; i < 200; i++){                    // ~13 min of patience
+    for (let i = 0; i < 900; i++){                    // ~60 min of patience (v6.2: a laptop lesson on the 27B can take 20–40 min)
       await new Promise(r => setTimeout(r, 4000));
       let a = null;
       try { a = await fetch('/api/answer?id=' + askId).then(r => r.json()); }
@@ -3489,9 +3491,10 @@ function ask(){
 
   /* Say plainly what each job will really use, after keys and capability. */
   function describe(cfg){
+    // v6.2 — one model on the laptop, Qwen 3.8 27B: honest about its speed (~1 word a second)
     const local = (p) => p === 'vision'
-      ? 'IBI Local — ' + (cfg.localVisionModel || 'qwen3.5:9b') + ' on this laptop, free and private'
-      : 'IBI Local — ' + (cfg.localModel || 'qwen3.5:4b') + ' on this laptop, free and private';
+      ? 'IBI Local — ' + prettyModel(cfg.localVisionModel || 'qwen3.8:27b') + ' on this laptop, free and private (about 1–2 minutes to read a photo)'
+      : 'IBI Local — ' + prettyModel(cfg.localModel || 'qwen3.8:27b') + ' on this laptop, free and private (slow: a full lesson takes 20–40 minutes)';
     for (const p of ['chat','vision']){
       const picked = jobSel[p].value;
       const eff = picked || cfg.engine || 'auto';
@@ -3558,6 +3561,12 @@ function ask(){
 }
 
 /* ============================ status ============================ */
+let VISION_LOCAL = true;            // v6.2 — photos read on the laptop? (from /api/status)
+/* Friendly name for a laptop model id: 'qwen3.8:27b' → 'Qwen 3.8 27B'. */
+function prettyModel(id){
+  const m = /^qwen(\d+(?:\.\d+)?):(\d+)b$/i.exec(String(id || ''));
+  return m ? 'Qwen ' + m[1] + ' ' + m[2] + 'B' : String(id || '');
+}
 function refreshStatus(){
   fetch('/api/status').then(r=>r.json()).then(s => {
     const pill = document.getElementById('enginePill');
@@ -3574,8 +3583,10 @@ function refreshStatus(){
         esc(bare(s.visionEngineName)) + '</span>' : '';
     pill.innerHTML = '<span class="dot"></span><span class="etxt">Engine: <b>' + esc(chatName) + '</b>' + photo + '</span>';
     const rowNote = document.getElementById('engineRowNote');
+    VISION_LOCAL = s.visionEngine === 'local';
+    // v6.2 — the Settings rows name the laptop model too ("IBI Local (Qwen 3.8 27B)")
     if (rowNote) rowNote.textContent = 'Answers: ' + chatName +
-      (s.visionEngineName ? ' · Photos: ' + bare(s.visionEngineName) : '');
+      (s.visionEngineName ? ' · Photos: ' + s.visionEngineName : '');
     const line = document.getElementById('statusline');
     const chunks = (s.index && s.index.chunks) ? s.index.chunks : s.chunksLoaded;
     line.textContent = '📚 ' + s.books.downloaded + '/' + s.books.total + ' textbooks on this laptop · ' +
@@ -3588,7 +3599,7 @@ function refreshStatus(){
     const feats = s.features || [];
     const missing = ['quiz', 'library', 'owner', 'feedback', 'lang', 'video'].filter(f => !feats.includes(f));
     const on = document.getElementById('ownerEngineNote');
-    if (on) on.textContent = 'Answers: ' + chatName + (s.visionEngineName ? ' · Photos: ' + bare(s.visionEngineName) : '');
+    if (on) on.textContent = 'Answers: ' + chatName + (s.visionEngineName ? ' · Photos: ' + s.visionEngineName : '');
     const about = document.getElementById('aboutLine');
     if (about) about.innerHTML = '<b>IBI Skilled Foundations Teacher</b>' +
       'App v' + esc(ver) + ' · Backend v' + esc(be) + ' ' +
