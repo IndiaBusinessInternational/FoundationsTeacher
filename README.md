@@ -1,4 +1,6 @@
-# IBI Skilled Foundations Teacher — v6.3
+# IBI Skilled Foundations Teacher — v6.4
+
+v6.4 (11 Oct 2026): on phones long words wrap with overflow-wrap break-word (only when a word cannot fit its line), never 'anywhere', which could split a label mid-word; buttons and selects never wrap mid-word. App and server are both 6.4 (the server reports it after its next restart).
 
 v6.3 (11 Oct 2026): on phones (640 px and narrower) the app is edge to edge — cards, lessons, the lesson player, quiz and lists span the full screen width with 10 px inner side padding, and the page can never be wider than the screen. Fonts unchanged; tablets and laptops unchanged. App and server are both 6.3 (the server number is a release label; it reports 6.3 after its next restart).
 
