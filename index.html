@@ -588,6 +588,39 @@ button#send:disabled{opacity:.4;cursor:default;box-shadow:none}
 /* phones: five tabs */
 @media(max-width:820px){ .tabbar{grid-template-columns:repeat(5,1fr)} .tabbar button{font-size:calc(12px*var(--ts))} .chap .cb{flex-wrap:wrap} .chap .cb .sbtn{flex:1 1 40%} }
 
+/* v6.3 (CEO 11 Oct 2026: "edge to edge with no padding" on phones — memory mobile-edge-to-edge-layout):
+   no outer gutter — cards, lessons, quiz, player and lists span the screen (no side border / radius / shadow);
+   loose text keeps 10px from the edge, header 8px; the page can never be wider than the screen. Only spacing
+   changes — the type scale is untouched; tablets and laptops look exactly as before. */
+@media(max-width:640px){
+  html,body{overflow-x:clip}
+  .vhead{padding-left:8px;padding-right:8px}
+  .vbody{padding:8px 10px}
+  .feed{padding:8px 10px 10px}
+  .composer{padding-left:8px;padding-right:8px}
+  .empty{padding-left:0;padding-right:0}
+  .starters{gap:8px}
+  /* full-bleed boxes: pulled out over the 10px side padding of their scroller */
+  .card,.sgroup,.lib-sub,.stgroup,.stats,.rlist > .ritem,.rlist > .ritem-w{margin-left:-10px;margin-right:-10px;width:auto}
+  .card,.sgroup,.lib-sub,.stgroup,.tile,.ritem,.ritem-w,.msg.bot{border-radius:0;border-left:0;border-right:0;box-shadow:none}
+  .card,.tile{padding:14px 10px} .sgroup{padding:6px 10px} .stgroup{padding:12px 10px 8px}
+  .lib-sub > summary{padding:14px 10px} .lib-book{padding:0 10px 10px}
+  .stats{gap:6px} .owner-lock{margin:16px -10px}
+  .msg.bot{align-self:stretch;width:auto;max-width:none;margin-left:-10px;margin-right:-10px;padding:12px 10px}
+  .msg.user{max-width:92%}
+  .msg,.card,.sgroup,.lib-sub,.ritem,.tile,.stgroup,.care{overflow-wrap:anywhere}
+  .msg .body ul,.msg .body ol{padding-left:18px}
+  /* inside a lesson the player, video and quiz reach the screen edge too */
+  .msg.bot .deck:not(.fs),.msg.bot .video-card,.msg.bot .quiz{margin-left:-10px;margin-right:-10px;border-radius:0;border-left:0;border-right:0}
+  .msg.bot .quiz{padding:14px 10px}
+  .video-card .vh,.vcap{padding-left:10px;padding-right:10px}
+  .slide{padding-left:10px;padding-right:10px}
+  /* dialogs: same rule — the card spans the screen, its content keeps 10px */
+  .emodal{padding:16px 0}
+  .ecard{border-radius:0;border-left:0;border-right:0}
+  .ecard h2{padding:16px 10px 10px} .ecard .ebody{padding:0 10px} .ebtns{padding:12px 10px 16px}
+}
+
 /* print a lesson as notes (Save as PDF): only the chosen answer, no player */
 @media print{
   html,body{height:auto;overflow:visible;background:#fff;color:#000}
@@ -608,7 +641,7 @@ button#send:disabled{opacity:.4;cursor:default;box-shadow:none}
 <aside class="side" aria-label="Main navigation">
   <div class="brand">
     <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-    <div class="brand-t"><h1>IBI Skilled Foundations Teacher</h1><small>NCERT Class 1–12 <span class="ver-badge" id="verBadge" title="v6.2 — the laptop's own AI is now ONE bigger model, Qwen 3.8 27B (qwen3.8:27b). It is careful but slow — about one word a second: a photographed question takes about 1–2 minutes to read, and if the cloud teacher is busy and the laptop writes the lesson itself, a full lesson can take 20–40 minutes (keep the page open or come back — the answer is kept safe). v6.1 — photo questions were read by the then-new qwen3.5:9b in about half a minute; photos sent at 1280 px. v6.0 — Expert teaching you can SEE and TRUST. Lessons follow an expert teacher's order (why it matters → what you know → step by step → HOW IT WORKS → example → common mistake → remember) written by Gemini with the laptop as backup; a real NCERT official video of how it works when one matches; animated lessons where things MOVE through the system (blood, water, current); LEARNER PROFILES on this device (name, class, sticker, language, daily goal) with English or Tamil answers; MY PROGRESS — streak, today's goal, lessons this week and chapter mastery from Needs practice to Mastered; 10-question PRACTICE TESTS from the Library or Progress, Try again and Explain what I got wrong; Save ⭐, search and delete in Recent; 👍 👎 and Report a mistake; Print notes / save as PDF; child-safety rules, a caring helpline line and a personal-details warning; owner-only AI settings behind the CEO password; browser security headers; per-address limits; privacy notice; offline notice. v5.0 — A professional learning app, built to current edtech standards. LIGHT learning surface with a dark mode that follows your phone; Nunito type at 16px with nothing under 12px; a sidebar (Ask · Library · Recent · Settings) that becomes a bottom tab bar on phones; the question box pinned to the bottom of the conversation; S. Sastika as a compact live portrait in the conversation header; a LIBRARY that browses every textbook the teacher has read (class → subject → book → chapter) with one-tap Explain / Questions / Open the book; RECENT lessons you can return to; a real lesson PLAYER (progress by scene, play/pause, previous/next, captions, speed, full screen); CHECK YOUR UNDERSTANDING — three questions after every answer with instant feedback; a SETTINGS screen (theme, text size, voice, lesson speed, captions, AI engine, install) with an About line showing App and Backend versions in step (backend 5.0); installable as an app (PWA) and a sign-in page in the same design. v4.6 — The laptop's own brain is new, and there is now only one of it (qwen3.5:4b reads photos and writes lessons). v4.5 — The textbook picture stays on screen long enough to be studied. v4.4 — The textbook slide shows the actual FIGURE. v4.3 — Copy any single part of an answer. v4.2 — Copy buttons on questions and answers. v4.1 — Pick the engine per job; photos can go to the cloud. v4.0 — Animated video lessons and multi-engine settings.">v6.2</span></small></div>
+    <div class="brand-t"><h1>IBI Skilled Foundations Teacher</h1><small>NCERT Class 1–12 <span class="ver-badge" id="verBadge" title="v6.3 — on phones the lessons, cards, lists and the lesson player now reach the edges of the screen, so there is more room to read. v6.2 — the laptop's own AI is now ONE bigger model, Qwen 3.8 27B (qwen3.8:27b). It is careful but slow — about one word a second: a photographed question takes about 1–2 minutes to read, and if the cloud teacher is busy and the laptop writes the lesson itself, a full lesson can take 20–40 minutes (keep the page open or come back — the answer is kept safe). v6.1 — photo questions were read by the then-new qwen3.5:9b in about half a minute; photos sent at 1280 px. v6.0 — Expert teaching you can SEE and TRUST. Lessons follow an expert teacher's order (why it matters → what you know → step by step → HOW IT WORKS → example → common mistake → remember) written by Gemini with the laptop as backup; a real NCERT official video of how it works when one matches; animated lessons where things MOVE through the system (blood, water, current); LEARNER PROFILES on this device (name, class, sticker, language, daily goal) with English or Tamil answers; MY PROGRESS — streak, today's goal, lessons this week and chapter mastery from Needs practice to Mastered; 10-question PRACTICE TESTS from the Library or Progress, Try again and Explain what I got wrong; Save ⭐, search and delete in Recent; 👍 👎 and Report a mistake; Print notes / save as PDF; child-safety rules, a caring helpline line and a personal-details warning; owner-only AI settings behind the CEO password; browser security headers; per-address limits; privacy notice; offline notice. v5.0 — A professional learning app, built to current edtech standards. LIGHT learning surface with a dark mode that follows your phone; Nunito type at 16px with nothing under 12px; a sidebar (Ask · Library · Recent · Settings) that becomes a bottom tab bar on phones; the question box pinned to the bottom of the conversation; S. Sastika as a compact live portrait in the conversation header; a LIBRARY that browses every textbook the teacher has read (class → subject → book → chapter) with one-tap Explain / Questions / Open the book; RECENT lessons you can return to; a real lesson PLAYER (progress by scene, play/pause, previous/next, captions, speed, full screen); CHECK YOUR UNDERSTANDING — three questions after every answer with instant feedback; a SETTINGS screen (theme, text size, voice, lesson speed, captions, AI engine, install) with an About line showing App and Backend versions in step (backend 5.0); installable as an app (PWA) and a sign-in page in the same design. v4.6 — The laptop's own brain is new, and there is now only one of it (qwen3.5:4b reads photos and writes lessons). v4.5 — The textbook picture stays on screen long enough to be studied. v4.4 — The textbook slide shows the actual FIGURE. v4.3 — Copy any single part of an answer. v4.2 — Copy buttons on questions and answers. v4.1 — Pick the engine per job; photos can go to the cloud. v4.0 — Animated video lessons and multi-engine settings.">v6.3</span></small></div>
   </div>
   <button class="who-chip" id="sideWho" title="Who is learning — switch or add a learner"><span class="av">🙂</span><span class="nm">Learner</span></button>
   <button class="newq" id="newChat" title="Start a new question"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>New question</span></button>

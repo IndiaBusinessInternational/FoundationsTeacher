@@ -1,4 +1,6 @@
-# IBI Skilled Foundations Teacher — v6.2
+# IBI Skilled Foundations Teacher — v6.3
+
+v6.3 (11 Oct 2026): on phones (640 px and narrower) the app is edge to edge — cards, lessons, the lesson player, quiz and lists span the full screen width with 10 px inner side padding, and the page can never be wider than the screen. Fonts unchanged; tablets and laptops unchanged. App and server are both 6.3 (the server number is a release label; it reports 6.3 after its next restart).
 
 v6.2 (7 Oct 2026): the laptop now runs ONE model, **Qwen 3.8 27B** (`qwen3.8:27b`, Q4_K_M) for both photos and the backup lessons. It writes about 1.1–1.2 tokens a second, so the app's labels now say so honestly (a photo ≈ 1–2 minutes to read; a full lesson written by the laptop when the cloud teacher is busy ≈ 20–40 minutes). Server: laptop-engine timeouts budgeted by output tokens + cold load (answers 5 → 20 min idle, photo reading 4 → 20 min, photo transcription capped at 1000 tokens), an answer still being written is kept 90 minutes, and the page waits up to ~60 minutes to collect an interrupted answer. App and server are both 6.2.
 
