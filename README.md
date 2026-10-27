@@ -1,4 +1,6 @@
-# IBI Skilled Foundations Teacher — v6.4
+# IBI Skilled Foundations Teacher — v6.5
+
+v6.5 (27 Oct 2026): WhatsApp rich preview — link-preview robots get HTTP 200 and a preview page (app name, one line, 1200×630 `og-banner.jpg` under 300 KB, `og:image:type` image/jpeg) instead of the "Sign in" page; `og-banner.jpg` and `ibi-share.js` are public. A Share button sits in the Ask screen header (`ibi-share.js` v1.0, precached). App and server are both 6.5.
 
 v6.4 (11 Oct 2026): on phones long words wrap with overflow-wrap break-word (only when a word cannot fit its line), never 'anywhere', which could split a label mid-word; buttons and selects never wrap mid-word. App and server are both 6.4 (the server reports it after its next restart).
 

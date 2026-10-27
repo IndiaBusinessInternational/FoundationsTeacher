@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   IBI Skilled Foundations Teacher — service worker (v6.4)
+   IBI Skilled Foundations Teacher — service worker (v6.5)
 
    Strategy
    ────────
@@ -17,11 +17,11 @@
    shipping old JS under a new version badge. Always bypass the HTTP cache here.
    ═══════════════════════════════════════════════════════════════════════════ */
 
-const VERSION     = 'v6.4';
+const VERSION     = 'v6.5';
 const SHELL_CACHE = 'ibiteacher-shell-' + VERSION;
 const ASSET_CACHE = 'ibiteacher-assets-' + VERSION;
 
-const PRECACHE = ['/manifest.json', '/icon-192.png', '/icon-512.png', '/favicon.png'];
+const PRECACHE = ['/manifest.json', '/icon-192.png', '/icon-512.png', '/favicon.png', '/ibi-share.js'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
